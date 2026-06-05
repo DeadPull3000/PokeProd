@@ -1,0 +1,351 @@
+@import "tailwindcss";
+
+/* ============================================================
+   GEN 3 GBA — FIRERED / LEAFGREEN SUMMARY SCREEN DESIGN SYSTEM
+   ============================================================ */
+
+:root {
+  /* ── Core Gen 3 Palette ── */
+  --g3-cream:         #F8F8ED;
+  --g3-cream-light:   #FFFAF2;
+  --g3-cream-dark:    #EDE8D0;
+  --g3-border-orange: #E09078;
+  --g3-border-teal:   #68A0B0;
+  --g3-header-teal:   #68B8B8;
+  --g3-header-dark:   #408090;
+  --g3-text:          #383028;
+  --g3-text-muted:    #706858;
+  --g3-accent-red:    #D04030;
+  --g3-accent-blue:   #3868C8;
+  --g3-accent-green:  #389848;
+  --g3-accent-gold:   #C89828;
+
+  /* ── HP Bar (unchanged, used in Safari Zone) ── */
+  --hp-green:  #18c818;
+  --hp-yellow: #f8c800;
+  --hp-red:    #f83030;
+  --hp-bg:     #383838;
+  --hp-border: #181818;
+
+  /* ── Fonts ── */
+  --font-pixel:    'Press Start 2P', monospace;
+  --font-dialogue: 'VT323', monospace;
+
+  /* ── Route Map Tiles ── */
+  --tile-grass:      #78C858;
+  --tile-tall-grass: #50A038;
+  --tile-path:       #C8A858;
+  --tile-tree-dark:  #285820;
+  --tile-tree-cap:   #48A830;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-dialogue);
+  background: #000;
+}
+
+/* ── Scrollbar (Gen 3 style) ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--g3-cream-dark); }
+::-webkit-scrollbar-thumb { background: var(--g3-border-teal); border-radius: 0; }
+
+/* ============================================================
+   GEN 3 PANEL SYSTEM
+   ============================================================ */
+
+/* Orange-border cream panel */
+.g3-panel {
+  background: var(--g3-cream);
+  border: 2px solid var(--g3-border-orange);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 rgba(200, 120, 96, 0.45),
+              0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* Teal-border cream panel */
+.g3-panel-teal {
+  background: var(--g3-cream);
+  border: 2px solid var(--g3-border-teal);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 rgba(80, 140, 160, 0.45),
+              0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* Teal header bar (top of Gen 3 summary screen) */
+.g3-header {
+  background: var(--g3-header-teal);
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 6px 6px 0 0;
+}
+
+/* Decorative pill dots (white circles in Gen 3 headers) */
+.g3-pill {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.75);
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Task entry */
+.g3-task {
+  background: var(--g3-cream-light);
+  border: 1px solid #D8D0B8;
+  border-left: 3px solid var(--g3-border-orange);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.1s;
+  position: relative;
+}
+.g3-task:hover { background: #F0EDD8; }
+.g3-task-teal { border-left-color: var(--g3-border-teal); }
+
+/* Project subtask */
+.g3-subtask {
+  background: white;
+  border: 1px solid #D8D0B8;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.g3-subtask:hover { background: #F8F5E8; }
+
+/* Input */
+.g3-input {
+  background: white;
+  border: 2px solid #C0B8A8;
+  border-radius: 4px;
+  font-family: var(--font-dialogue);
+  font-size: 1.2rem;
+  color: var(--g3-text);
+  padding: 5px 10px;
+  outline: none;
+  width: 100%;
+}
+.g3-input:focus { border-color: var(--g3-border-teal); }
+.g3-input::placeholder { color: #B8B0A0; }
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+
+.pk-title    { font-family: var(--font-pixel); font-size: 0.8rem;  color: var(--g3-text); letter-spacing: -0.5px; line-height: 1.6; }
+.pk-title-sm { font-family: var(--font-pixel); font-size: 0.6rem;  color: var(--g3-text); letter-spacing: -0.5px; line-height: 1.8; }
+.pk-header   { font-family: var(--font-pixel); font-size: 0.65rem; color: var(--g3-text); letter-spacing: -0.5px; line-height: 1.8; }
+.pk-label    { font-family: var(--font-pixel); font-size: 0.48rem; color: var(--g3-text); letter-spacing: -0.3px; line-height: 2;   }
+.pk-label-sm { font-family: var(--font-pixel); font-size: 0.38rem; color: var(--g3-text); letter-spacing: -0.2px; line-height: 2;   }
+
+.pk-dialogue-text { font-family: var(--font-dialogue); font-size: 1.3rem; color: var(--g3-text); line-height: 1.3; }
+
+/* Color overrides */
+.pk-white      { color: #ffffff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.35); }
+.pk-muted      { color: var(--g3-text-muted) !important; }
+.pk-red        { color: var(--g3-accent-red) !important; }
+.pk-blue       { color: var(--g3-accent-blue) !important; }
+.pk-green      { color: var(--g3-accent-green) !important; }
+.pk-gold       { color: var(--g3-accent-gold) !important; }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.g3-btn {
+  background: var(--g3-header-teal);
+  color: white;
+  border: 2px solid var(--g3-header-dark);
+  border-radius: 6px;
+  box-shadow: 2px 2px 0 var(--g3-header-dark);
+  font-family: var(--font-pixel);
+  font-size: 0.52rem;
+  letter-spacing: -0.3px;
+  line-height: 1.6;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s;
+  user-select: none;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.g3-btn:hover:not(:disabled)  { background: #78C8C8; }
+.g3-btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 0 0 0; }
+.g3-btn:disabled               { opacity: 0.4; cursor: not-allowed; }
+
+.g3-btn-sm { font-size: 0.42rem; padding: 4px 8px; }
+
+.g3-btn-orange {
+  background: #E09878; color: white;
+  border-color: #B87060; box-shadow: 2px 2px 0 #B87060;
+}
+.g3-btn-orange:hover:not(:disabled) { background: #E8A888; }
+
+.g3-btn-red {
+  background: var(--g3-accent-red); color: white;
+  border-color: #A02020; box-shadow: 2px 2px 0 #A02020;
+}
+.g3-btn-red:hover:not(:disabled) { background: #E05040; }
+
+.g3-btn-cream {
+  background: var(--g3-cream); color: var(--g3-text);
+  border: 2px solid var(--g3-border-orange);
+  box-shadow: 2px 2px 0 rgba(200,120,96,0.4);
+}
+.g3-btn-cream:hover:not(:disabled) { background: var(--g3-cream-dark); }
+
+/* ============================================================
+   HP BAR (Safari Zone)
+   ============================================================ */
+
+.hp-bar-track { background: var(--hp-bg); border: 2px solid var(--hp-border); border-radius: 0; height: 10px; overflow: hidden; }
+.hp-bar-fill  { height: 100%; transition: width 0.8s linear, background-color 0.5s ease; }
+.hp-green     { background: var(--hp-green); }
+.hp-yellow    { background: var(--hp-yellow); }
+.hp-red       { background: var(--hp-red); box-shadow: 0 0 4px var(--hp-red); }
+.hp-label     { font-family: var(--font-pixel); font-size: 0.42rem; color: var(--g3-text); letter-spacing: -0.2px; }
+
+/* HP red pulse for critical timer */
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(248,48,48,0); }
+  50%       { box-shadow: 0 0 0 6px rgba(248,48,48,0.5); }
+}
+.hp-red-pulse { animation: pulse-red 1s ease-in-out infinite; }
+
+/* ============================================================
+   PIXEL SPRITES
+   ============================================================ */
+
+.pixel-sprite { image-rendering: pixelated; image-rendering: crisp-edges; }
+
+/* ============================================================
+   SAFARI ZONE — BATTLE SCREEN
+   ============================================================ */
+
+.battle-bg {
+  background: linear-gradient(to bottom, #90c8f0 0%, #a8d8f8 38%, #68a838 38%, #509028 55%, #407818 100%);
+  position: relative;
+  overflow: hidden;
+}
+.battle-bg::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 62%;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 7px, rgba(0,0,0,0.06) 7px, rgba(0,0,0,0.06) 8px),
+    repeating-linear-gradient(90deg, transparent, transparent 7px, rgba(0,0,0,0.04) 7px, rgba(0,0,0,0.04) 8px);
+  pointer-events: none;
+}
+
+/* Enemy HP box (Gen 3 style) */
+.enemy-hp-box {
+  background: var(--g3-cream);
+  border: 3px solid var(--g3-border-orange);
+  border-radius: 6px;
+  box-shadow: 2px 2px 0 rgba(200,120,96,0.5), 0 4px 14px rgba(0,0,0,0.35);
+  padding: 6px 10px;
+  min-width: 200px;
+}
+
+/* Battle buttons (Gen 3 cream style) */
+.battle-btn {
+  background: var(--g3-cream);
+  border: 3px solid var(--g3-border-orange);
+  border-radius: 6px;
+  box-shadow: 2px 2px 0 rgba(200,120,96,0.5);
+  font-family: var(--font-pixel);
+  font-size: 0.6rem;
+  color: var(--g3-text);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
+  transition: transform 0.08s, box-shadow 0.08s;
+  user-select: none;
+  letter-spacing: -0.3px;
+}
+.battle-btn:hover:not(:disabled)  { background: var(--g3-cream-dark); }
+.battle-btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 0 0 0; }
+.battle-btn:disabled               { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+.battle-btn-focus { border-color: var(--g3-accent-blue); color: var(--g3-accent-blue); }
+.battle-btn-bait  { border-color: var(--g3-accent-green); color: var(--g3-accent-green); }
+.battle-btn-run   { border-color: var(--g3-accent-red); color: var(--g3-accent-red); }
+.battle-btn-catch { background: #F8E878; border-color: #C8A820; color: #786010; }
+.battle-btn-catch:hover:not(:disabled) { background: #FFED90; }
+
+/* ============================================================
+   ROUTE MAP TILES
+   ============================================================ */
+
+.tile { display: block; }
+.tile-G { background: #78C858; }
+.tile-W { background: #50A038; }
+.tile-P { background: #C8A858; }
+.tile-T {
+  background: #285820;
+  position: relative;
+  overflow: hidden;
+}
+.tile-T::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%; height: 65%;
+  background: #48A830;
+  border-radius: 2px 2px 0 0;
+}
+.tile-F { background: #78C858; } /* flower tile (grass with flower overlay) */
+.tile-S { background: #C8A858; } /* sign tile */
+
+/* ============================================================
+   EVOLUTION FLASH
+   ============================================================ */
+
+@keyframes evo-flash {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  30%  { opacity: 0; }
+  50%  { opacity: 1; }
+  70%  { opacity: 0; }
+  85%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.evo-flash { animation: evo-flash 1.6s ease-in-out forwards; }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+@keyframes floatA { 0%, 100% { transform: translateY(0)  rotate(-2deg); } 50% { transform: translateY(-16px) rotate(2deg);  } }
+@keyframes floatB { 0%, 100% { transform: translateY(0)  rotate(1deg);  } 50% { transform: translateY(-20px) rotate(-1deg); } }
+@keyframes floatC { 0%, 100% { transform: translateY(0)  scale(1);      } 50% { transform: translateY(-10px) scale(1.04);   } }
+@keyframes drift  { 0% { transform: translate(0,0); } 33% { transform: translate(10px,-6px); } 66% { transform: translate(-6px,-12px); } 100% { transform: translate(0,0); } }
+@keyframes blink-cursor { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes xp-pop { 0% { transform: scale(1) translateY(0); opacity: 1; } 40% { transform: scale(1.6) translateY(-10px); } 100% { transform: scale(0) translateY(-60px); opacity: 0; } }
+@keyframes slide-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+.float-a     { animation: floatA 6s ease-in-out infinite; }
+.float-b     { animation: floatB 8s ease-in-out infinite; }
+.float-c     { animation: floatC 5s ease-in-out infinite; }
+.drift       { animation: drift 12s ease-in-out infinite; }
+.blink-cursor{ animation: blink-cursor 1s step-end infinite; }
