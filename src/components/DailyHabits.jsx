@@ -543,13 +543,13 @@ function HabitRow({ habit, onComplete, onDelete }) {
 
 /* Add-habit inline form */
 function AddHabitForm() {
-  const { addHabit } = useStore()
+  const { addHabitToDb } = useStore()
   const [text, setText] = useState('')
 
   function handleSubmit(e) {
     e.preventDefault()
     if (!text.trim()) return
-    addHabit(text.trim())
+    addHabitToDb(text.trim())
     setText('')
   }
 
@@ -597,7 +597,15 @@ function AddHabitForm() {
 }
 
 function HabitSection({ onShinyEncounter }) {
-  const { habits, completeHabit, deleteHabit, _shinyEncounter } = useStore()
+  const {
+    habits, updateHabitStreak, deleteHabitFromDb,
+    fetchHabits, habitsLoading, caughtShinies, _shinyEncounter,
+  } = useStore()
+
+  /* Fetch from DB on mount */
+  useEffect(function() {
+    fetchHabits()
+  }, [fetchHabits])
 
   /* Watch for shiny encounters signalled by the store action */
   const prevShinyRef = useRef(null)
@@ -607,6 +615,55 @@ function HabitSection({ onShinyEncounter }) {
       onShinyEncounter(_shinyEncounter)
     }
   }, [_shinyEncounter, onShinyEncounter])
+
+  /* Complete a habit: calculate streak locally, persist to DB, then shiny roll */
+  function handleCompleteHabit(habitId) {
+    var today = new Date().toISOString().slice(0, 10)
+    var habit = habits.find(function(h) { return h.id === habitId })
+    if (!habit) return
+    if (habit.lastCompleted && habit.lastCompleted.slice(0, 10) === today) return
+
+    var newStreak = habit.streak + 1
+    var lastCompletedDate = new Date().toISOString()
+
+    /* Optimistic local update for instant UI feedback */
+    useStore.setState(function(s) {
+      return {
+        habits: s.habits.map(function(h) {
+          return h.id === habitId
+            ? { ...h, streak: newStreak, lastCompleted: lastCompletedDate }
+            : h
+        }),
+      }
+    })
+
+    /* Persist to Supabase */
+    updateHabitStreak(habitId, newStreak, lastCompletedDate)
+
+    /* Shiny roll */
+    var threshold
+    if (newStreak <= 2)       threshold = 1 / 4096
+    else if (newStreak <= 6)  threshold = 1 / 1000
+    else if (newStreak <= 14) threshold = 1 / 100
+    else                      threshold = 1 / 20
+
+    var roll = Math.random()
+    var isShiny = roll < threshold
+    if (isShiny) {
+      var pokemonId = Math.floor(Math.random() * 151) + 1
+      var shinyEntry = {
+        id: Math.random().toString(36).substring(2, 10),
+        pokemonId: pokemonId,
+        dateCaught: new Date().toISOString(),
+      }
+      useStore.setState(function(s) {
+        return {
+          caughtShinies: [...s.caughtShinies, shinyEntry],
+          _shinyEncounter: shinyEntry,
+        }
+      })
+    }
+  }
 
   var doneCount  = habits.filter(function(h) { return h.lastCompleted && h.lastCompleted.slice(0, 10) === todayStr() }).length
   var totalCount = habits.length
@@ -678,8 +735,8 @@ function HabitSection({ onShinyEncounter }) {
                 <HabitRow
                   key={habit.id}
                   habit={habit}
-                  onComplete={completeHabit}
-                  onDelete={deleteHabit}
+                  onComplete={handleCompleteHabit}
+                  onDelete={deleteHabitFromDb}
                 />
               )
             })
@@ -849,9 +906,27 @@ function ShinyBox() {
 
 export default function DailyHabits() {
   const [shinyModal, setShinyModal] = useState(null)
+  const { habitsLoading } = useStore()
 
   function handleShinyEncounter(shiny) {
     setShinyModal(shiny)
+  }
+
+  if (habitsLoading) {
+    return (
+      <div style={{ height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{
+          height: 80, background: '#EDE8D0', border: '2px solid #C0B8A8',
+          borderRadius: 8, animation: 'pulse 1.5s ease-in-out infinite', flexShrink: 0,
+        }} />
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} style={{
+            height: 60, background: '#EDE8D0', border: '2px solid #C0B8A8',
+            borderRadius: 8, animation: 'pulse 1.5s ease-in-out infinite', flexShrink: 0,
+          }} />
+        ))}
+      </div>
+    )
   }
 
   return (

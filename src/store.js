@@ -115,7 +115,11 @@ export const useStore = create(function(set, get) {
         authLoading: false,
       })
       if (session) {
+        get().fetchProfile()
         get().fetchTasks()
+        get().fetchNuzlocke()
+        get().fetchSecretBase()
+        get().fetchHabits()
       }
     },
 
@@ -127,14 +131,18 @@ export const useStore = create(function(set, get) {
         authLoading: false,
       })
       if (session) {
+        get().fetchProfile()
         get().fetchTasks()
+        get().fetchNuzlocke()
+        get().fetchSecretBase()
+        get().fetchHabits()
       }
     },
 
     /* Sign out and clear local auth state */
     signOut: async function() {
       await supabase.auth.signOut()
-      set({ session: null, user: null, tasks: [] })
+      set({ session: null, user: null, tasks: [], party: [], daycare: [], completedTasks: [], inventory: [], placedItems: [], habits: [] })
     },
 
     /* Quick tasks */
@@ -172,8 +180,9 @@ export const useStore = create(function(set, get) {
     /* App state */
     activeTab: 'journey',
     trainerName: 'TRAINER RED',
-    trainerLevel: 12,
-    totalXP: 1395,
+    /* trainerLevel is derived dynamically from totalXP — never hardcoded */
+    trainerLevel: 1,
+    totalXP: 0,
 
     /* Settings */
     starterPokemon: { id: 155, name: 'CYNDAQUIL' },
@@ -266,11 +275,57 @@ export const useStore = create(function(set, get) {
     raidLog: ['The raid has begun!', 'Co-op trainers are joining...'],
 
     /* ----------------------------------------------------------------
+       PROFILE / LEVEL / XP (Supabase backed)
+    ---------------------------------------------------------------- */
+
+    /* Load XP from the profiles table and derive level */
+    fetchProfile: async function() {
+      var state = get()
+      if (!state.session) return
+      var result = await supabase
+        .from('profiles')
+        .select('xp, username')
+        .eq('id', state.session.user.id)
+        .single()
+      if (!result.error && result.data) {
+        var xpVal = result.data.xp || 0
+        var levelVal = Math.floor(xpVal / 100) + 1
+        set({
+          totalXP: xpVal,
+          trainerLevel: levelVal,
+          trainerName: result.data.username
+            ? result.data.username.toUpperCase()
+            : state.trainerName,
+        })
+      }
+    },
+
+    /* Add XP: update local state immediately, then persist */
+    addXp: async function(amount) {
+      var state = get()
+      var newXp = state.totalXP + amount
+      var newLevel = Math.floor(newXp / 100) + 1
+      set({ totalXP: newXp, trainerLevel: newLevel })
+      if (state.session) {
+        await supabase
+          .from('profiles')
+          .update({ xp: newXp })
+          .eq('id', state.session.user.id)
+      }
+    },
+
+    /* ----------------------------------------------------------------
        CLOUD TASK ACTIONS (Journey Tab - Supabase backed)
     ---------------------------------------------------------------- */
 
     tasksLoading: false,
     tasksError: null,
+
+    /* Loading flags for cloud-backed tabs */
+    nuzlockeLoading: true,
+    secretBaseLoading: true,
+    habitsLoading: true,
+
 
     /* Fetch all tasks for the current user from Supabase */
     fetchTasks: async function() {
@@ -380,19 +435,165 @@ export const useStore = create(function(set, get) {
       set(function(state) { return { projects: state.projects.filter(function(p) { return p.id !== id }) } })
     },
 
-    /* Safari Zone XP */
+    /* Safari Zone XP — updates element radar AND total XP (persisted to DB) */
     gainXP: function(element, amount) {
       set(function(state) {
         return {
           xp: { ...state.xp, [element]: (state.xp[element] || 0) + amount },
-          totalXP: state.totalXP + amount,
         }
       })
+      /* addXp handles totalXP + trainerLevel + Supabase persistence */
+      get().addXp(amount)
     },
+
 
     setActiveTab: function(tab) { set({ activeTab: tab }) },
 
     setTrainerName: function(name) { set({ trainerName: name }) },
+
+    /* ----------------------------------------------------------------
+       NUZLOCKE PARTY — CLOUD ACTIONS (Supabase backed)
+    ---------------------------------------------------------------- */
+
+    fetchNuzlocke: async function() {
+      var state = get()
+      if (!state.session) return
+      set({ nuzlockeLoading: true })
+      var result = await supabase
+        .from('nuzlocke_party')
+        .select('*')
+        .eq('user_id', state.session.user.id)
+        .order('created_at', { ascending: true })
+      if (!result.error) {
+        var rows = result.data || []
+        /* Map DB columns → local shape */
+        var party = rows.filter(function(r) { return r.location === 'party' }).map(function(r) {
+          return { id: r.id, taskName: r.task_name, pokemonId: r.pokemon_id, deadline: r.deadline, status: r.status }
+        })
+        var daycare = rows.filter(function(r) { return r.location === 'daycare' }).map(function(r) {
+          return { id: r.id, taskName: r.task_name }
+        })
+        set({ party: party, daycare: daycare, nuzlockeLoading: false })
+      } else {
+        set({ nuzlockeLoading: false })
+      }
+    },
+
+    addNuzlockeTask: async function(taskName, pokemonId, deadline, location) {
+      var state = get()
+      if (!state.session) return
+      await supabase.from('nuzlocke_party').insert([{
+        user_id: state.session.user.id,
+        task_name: taskName,
+        pokemon_id: pokemonId || null,
+        deadline: deadline || null,
+        status: location === 'party' ? 'active' : null,
+        location: location || 'daycare',
+      }])
+      get().fetchNuzlocke()
+    },
+
+    updateNuzlockeStatus: async function(id, status) {
+      await supabase.from('nuzlocke_party').update({ status: status }).eq('id', id)
+      get().fetchNuzlocke()
+    },
+
+    /* ----------------------------------------------------------------
+       SECRET BASE — CLOUD ACTIONS (Supabase backed)
+    ---------------------------------------------------------------- */
+
+    fetchSecretBase: async function() {
+      var state = get()
+      if (!state.session) return
+      set({ secretBaseLoading: true })
+      var result = await supabase
+        .from('secret_base_items')
+        .select('*')
+        .eq('user_id', state.session.user.id)
+        .order('created_at', { ascending: true })
+      if (!result.error) {
+        var rows = result.data || []
+        var inventory = rows.filter(function(r) { return !r.is_placed }).map(function(r) {
+          return { id: r.id, spriteName: r.sprite_name }
+        })
+        var placedItems = rows.filter(function(r) { return r.is_placed }).map(function(r) {
+          return { id: r.id, spriteName: r.sprite_name, gridX: r.grid_x, gridY: r.grid_y }
+        })
+        set({ inventory: inventory, placedItems: placedItems, secretBaseLoading: false })
+      } else {
+        set({ secretBaseLoading: false })
+      }
+    },
+
+    addSecretBaseItem: async function(spriteName) {
+      var state = get()
+      if (!state.session) return
+      await supabase.from('secret_base_items').insert([{
+        user_id: state.session.user.id,
+        sprite_name: spriteName,
+        is_placed: false,
+        grid_x: null,
+        grid_y: null,
+      }])
+      get().fetchSecretBase()
+    },
+
+    updateItemPlacement: async function(id, gridX, gridY, isPlaced) {
+      await supabase.from('secret_base_items').update({
+        is_placed: isPlaced,
+        grid_x: isPlaced ? gridX : null,
+        grid_y: isPlaced ? gridY : null,
+      }).eq('id', id)
+      get().fetchSecretBase()
+    },
+
+    /* ----------------------------------------------------------------
+       DAILY HABITS — CLOUD ACTIONS (Supabase backed)
+    ---------------------------------------------------------------- */
+
+    fetchHabits: async function() {
+      var state = get()
+      if (!state.session) return
+      set({ habitsLoading: true })
+      var result = await supabase
+        .from('daily_habits')
+        .select('*')
+        .eq('user_id', state.session.user.id)
+        .order('created_at', { ascending: true })
+      if (!result.error) {
+        var habits = (result.data || []).map(function(r) {
+          return { id: r.id, name: r.name, streak: r.streak || 0, lastCompleted: r.last_completed_date }
+        })
+        set({ habits: habits, habitsLoading: false })
+      } else {
+        set({ habitsLoading: false })
+      }
+    },
+
+    updateHabitStreak: async function(id, newStreak, lastCompletedDate) {
+      await supabase.from('daily_habits').update({
+        streak: newStreak,
+        last_completed_date: lastCompletedDate,
+      }).eq('id', id)
+      get().fetchHabits()
+    },
+
+    addHabitToDb: async function(name) {
+      var state = get()
+      if (!state.session) return
+      await supabase.from('daily_habits').insert([{
+        user_id: state.session.user.id,
+        name: name,
+        streak: 0,
+        last_completed_date: null,
+      }])
+      get().fetchHabits()
+    },
+
+    deleteHabitFromDb: async function(id) {
+      await supabase.from('daily_habits').delete().eq('id', id)
+      get().fetchHabits()
+    },
 
     updateSettings: function(patch) { set(patch) },
 

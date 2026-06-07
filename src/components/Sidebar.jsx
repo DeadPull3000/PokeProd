@@ -76,7 +76,10 @@ function RadarChart({ xpData, elements }) {
 export default function Sidebar({ xpData, elements, onSignOut }) {
   const { activeTab, setActiveTab, trainerName, trainerLevel, totalXP, starterPokemon, user } = useStore()
   const maxXP = Math.max(...Object.values(xpData), 1)
-  const levelProgress = (totalXP % 500) / 500
+  /* 100 XP per level tier */
+  const XP_PER_LEVEL   = 100
+  const xpIntoLevel    = totalXP % XP_PER_LEVEL
+  const levelProgress  = xpIntoLevel / XP_PER_LEVEL
 
   const SPRITE_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites'
   const starterGif = starterPokemon
@@ -159,7 +162,7 @@ export default function Sidebar({ xpData, elements, onSignOut }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
               <span className="hp-label" style={{ fontSize: '0.4rem' }}>EXP.</span>
               <span className="hp-label" style={{ fontSize: '0.4rem' }}>
-                {Math.round(levelProgress * 500)}/500
+                {xpIntoLevel}/{XP_PER_LEVEL} LVL UP
               </span>
             </div>
             <div className="hp-bar-track" style={{ height: 7 }}>
@@ -169,6 +172,11 @@ export default function Sidebar({ xpData, elements, onSignOut }) {
                 animate={{ width: `${levelProgress * 100}%` }}
                 transition={{ duration: 1.4, ease: 'easeOut' }}
               />
+            </div>
+            <div style={{ textAlign: 'center', marginTop: 4 }}>
+              <span className="pk-label" style={{ fontSize: '0.32rem', color: 'var(--g3-text-muted)' }}>
+                {totalXP.toLocaleString()} XP TOTAL
+              </span>
             </div>
           </div>
         </div>

@@ -140,12 +140,27 @@ function PokeballArc({ onComplete }) {
   )
 }
 
-/* ── Battle platform (shadow oval under sprite) ── */
-function Platform({ style }) {
+/* ── Battle platform — visible Gen 4/5 oval ── */
+function Platform({ style, variant = 'grass', player = false }) {
+  const grassPlatform = {
+    background: player
+      ? 'linear-gradient(180deg, #7CC060 0%, #58A038 60%, #3D7820 100%)'
+      : 'linear-gradient(180deg, #90D068 0%, #6CB848 55%, #4A9030 100%)',
+    border: player ? '3px solid #2D5C18' : '2px solid #3A7018',
+    boxShadow: player
+      ? 'inset 0 -4px 8px rgba(0,0,0,0.3), 0 4px 0 #1E4010'
+      : 'inset 0 -3px 6px rgba(0,0,0,0.25), 0 3px 0 #2A5810',
+  }
+  const cavePlatform = {
+    background: 'linear-gradient(180deg, #8A7860 0%, #6A5840 55%, #4A3820 100%)',
+    border: '2px solid #302010',
+    boxShadow: 'inset 0 -3px 6px rgba(0,0,0,0.35), 0 3px 0 #201008',
+  }
+  const base = variant === 'cave' ? cavePlatform : grassPlatform
   return (
     <div style={{
       ...style,
-      background: 'radial-gradient(ellipse, rgba(0,0,0,0.25), transparent 70%)',
+      ...base,
       borderRadius: '50%',
       position: 'absolute',
     }} />
@@ -240,6 +255,7 @@ export default function SafariZone() {
   const [dialogue, setDialogue]         = useState('')
   const [showBall, setShowBall]         = useState(false)
   const [spriteVisible, setSpriteVisible] = useState(true)
+  const [catchAnimating, setCatchAnimating] = useState(false)
   const [introIndex, setIntroIndex]     = useState(0)
   const intervalRef = useRef(null)
 
@@ -347,13 +363,16 @@ export default function SafariZone() {
     if (phase !== 'catchable') return
     setPhase('catching')
     setShowBall(true)
+    setCatchAnimating(true)
     setDialogue(`You threw a SAFARI BALL!`)
-    setSpriteVisible(false)
+    /* Sprite shrinks while ball flies */
+    setTimeout(() => setSpriteVisible(false), 400)
   }
 
   /* ── After Pokéball animation ── */
   const handleBallLand = () => {
     setShowBall(false)
+    setCatchAnimating(false)
     setPhase('caught')
     const xpGain = session.minutes * 8
     gainXP('psychic', xpGain)
@@ -369,6 +388,7 @@ export default function SafariZone() {
     setSession(null)
     setDialogue('')
     setSpriteVisible(true)
+    setCatchAnimating(false)
     setShowBall(false)
   }
 
@@ -406,13 +426,16 @@ export default function SafariZone() {
         </div>
 
         {/* ── Enemy Platform + Sprite (top-right) ── */}
-        <Platform style={{ bottom: '38%', right: '12%', width: 160, height: 22 }} />
+        <Platform
+          style={{ bottom: '38%', right: '12%', width: 170, height: 30, zIndex: 2 }}
+          variant="grass"
+        />
         <AnimatePresence>
           {spriteVisible && (
             <motion.div
               key="enemy"
               className="absolute"
-              style={{ right: '14%', bottom: '39%', zIndex: 3 }}
+              style={{ right: '14%', bottom: '42%', zIndex: 3 }}
               initial={{ x: 120, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ opacity: 0, scale: 0, filter: 'brightness(3)' }}
@@ -421,9 +444,9 @@ export default function SafariZone() {
               <motion.img
                 src={SPRITE(session.pokemon.id)}
                 alt={session.pokemon.name}
-                className="pixel-sprite"
+                className={`pixel-sprite ${catchAnimating ? 'anim-catch-shrink' : ''}`}
                 style={{ width: 'auto', height: 120, imageRendering: 'pixelated', cursor: 'pointer' }}
-                animate={phase === 'catchable' ? { y: [0, -6, 0] } : {}}
+                animate={!catchAnimating && phase === 'catchable' ? { y: [0, -6, 0] } : {}}
                 transition={{ duration: 0.7, repeat: Infinity }}
                 onMouseEnter={function() {
                   if (!useStore.getState().soundEffects) return
@@ -440,10 +463,14 @@ export default function SafariZone() {
         </AnimatePresence>
 
         {/* ── Player Platform + Back Sprite (bottom-left) ── */}
-        <Platform style={{ bottom: '10%', left: '10%', width: 130, height: 18 }} />
+        <Platform
+          style={{ bottom: '8%', left: '8%', width: 160, height: 36, zIndex: 2 }}
+          player
+          variant="grass"
+        />
         <motion.div
           className="absolute"
-          style={{ left: '8%', bottom: '11%', zIndex: 3 }}
+          style={{ left: '8%', bottom: '14%', zIndex: 3 }}
           initial={{ x: -120, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.25, ease: 'easeOut' }}
@@ -459,9 +486,24 @@ export default function SafariZone() {
           />
         </motion.div>
 
-        {/* ── Pokéball arc ── */}
+        {/* ── Pokéball arc — lunge animation ── */}
         <AnimatePresence>
-          {showBall && <PokeballArc onComplete={handleBallLand} />}
+          {showBall && (
+            <motion.img
+              src={SAFARI_BALL_URL}
+              alt="Safari Ball"
+              className="pixel-sprite anim-ball-lunge"
+              style={{
+                position: 'absolute',
+                bottom: '22%',
+                left: '22%',
+                width: 28,
+                zIndex: 30,
+                imageRendering: 'pixelated',
+              }}
+              onAnimationEnd={handleBallLand}
+            />
+          )}
         </AnimatePresence>
 
         {/* ── Phase flash overlay (caught) ── */}

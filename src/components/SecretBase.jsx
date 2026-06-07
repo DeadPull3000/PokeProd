@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store'
 
@@ -284,14 +284,32 @@ function InventoryChip({ item, isSelected, onSelect }) {
 function LogAndInventory() {
   const {
     completedTasks, inventory, selectedInventoryItem,
-    claimReward, selectInventoryItem,
+    addSecretBaseItem, selectInventoryItem, fetchSecretBase, secretBaseLoading,
   } = useStore()
+
+  /* Fetch from DB on mount */
+  useEffect(function() {
+    fetchSecretBase()
+  }, [fetchSecretBase])
 
   const unclaimedCount = completedTasks.filter(function(t) { return !t.isClaimed }).length
 
   function handleInventoryClick(itemId) {
     /* Toggle: clicking already-selected item deselects it */
     selectInventoryItem(selectedInventoryItem === itemId ? null : itemId)
+  }
+
+  /* Claim reward: insert into DB then mark local completed task as claimed */
+  function handleClaim(task) {
+    addSecretBaseItem(task.rewardItemSprite)
+    /* Also mark the completedTask locally as claimed so UI updates */
+    useStore.setState(function(s) {
+      return {
+        completedTasks: s.completedTasks.map(function(t) {
+          return t.id === task.id ? { ...t, isClaimed: true } : t
+        }),
+      }
+    })
   }
 
   return (
@@ -340,7 +358,7 @@ function LogAndInventory() {
                   <CompletedTaskRow
                     key={task.id}
                     task={task}
-                    onClaim={claimReward}
+                    onClaim={() => handleClaim(task)}
                   />
                 )
               })
@@ -555,7 +573,7 @@ function RoomCell({ row, col, placedItem, isOccupied, selectedInventoryItem, onP
 function SecretBaseRoom() {
   const {
     placedItems, selectedInventoryItem, inventory,
-    placeItem, pickupItem,
+    updateItemPlacement, selectInventoryItem,
   } = useStore()
 
   /* Look up the selected inventory item object for the placement call */
@@ -563,11 +581,14 @@ function SecretBaseRoom() {
 
   function handleCellPlace(gridX, gridY) {
     if (!selectedInventoryItem) return
-    placeItem(selectedInventoryItem, gridX, gridY)
+    /* Update DB: mark as placed with coordinates */
+    updateItemPlacement(selectedInventoryItem, gridX, gridY, true)
+    selectInventoryItem(null)
   }
 
   function handleCellPickup(placedId) {
-    pickupItem(placedId)
+    /* Update DB: mark as unplaced, clear coordinates */
+    updateItemPlacement(placedId, null, null, false)
   }
 
   /* Count placed items for the stat strip */
@@ -856,6 +877,29 @@ function AddCompletedTaskForm() {
    MAIN TAB COMPONENT
    ============================================================ */
 export default function SecretBase() {
+  const { secretBaseLoading } = useStore()
+
+  if (secretBaseLoading) {
+    return (
+      <div style={{
+        height: '100%', display: 'grid',
+        gridTemplateColumns: '1fr 2fr', gap: 12,
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[120, 180].map((h, i) => (
+            <div key={i} style={{
+              height: h, background: '#EDE8D0', border: '2px solid #C0B8A8',
+              borderRadius: 8, animation: 'pulse 1.5s ease-in-out infinite',
+            }} />
+          ))}
+        </div>
+        <div style={{
+          background: '#EDE8D0', border: '2px solid #C0B8A8',
+          borderRadius: 8, animation: 'pulse 1.5s ease-in-out infinite',
+        }} />
+      </div>
+    )
+  }
   return (
     <div style={{
       height: '100%',

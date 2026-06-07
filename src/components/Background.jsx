@@ -190,7 +190,7 @@ export default function Background({ children, forcedScene }) {
   const isNight = scene === 'night'
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden" style={{ imageRendering: 'pixelated' }}>
       {/* Sky gradient */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -269,6 +269,11 @@ export default function Background({ children, forcedScene }) {
           <span className="pk-label">{sceneData.timeLabel}</span>
         </motion.div>
       </div>
+
+      {/* Pixel-grid retro overlay for GBA screen feel */}
+      <div
+        className="absolute inset-0 z-[9] pointer-events-none pixel-retro-overlay"
+      />
 
       {/* Content */}
       <div className="relative z-10 w-full h-full">

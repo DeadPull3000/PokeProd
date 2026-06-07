@@ -239,19 +239,58 @@ body {
    SAFARI ZONE — BATTLE SCREEN
    ============================================================ */
 
+/* ── Pixel-banded battle background (Gen 4/5 battle scene style) ── */
 .battle-bg {
-  background: linear-gradient(to bottom, #90c8f0 0%, #a8d8f8 38%, #68a838 38%, #509028 55%, #407818 100%);
+  /* Distinct horizontal colour bands — sky at top, horizon at mid, green ground at base */
+  background:
+    linear-gradient(to bottom,
+      #6CB4E8 0%,   #6CB4E8 10%,
+      #8FC8F0 10%,  #8FC8F0 20%,
+      #AADAF8 20%,  #AADAF8 32%,
+      #C2E8FF 32%,  #C2E8FF 38%,
+      #7CC060 38%,  #7CC060 44%,
+      #58A038 44%,  #58A038 56%,
+      #407828 56%,  #407828 70%,
+      #305818 70%,  #305818 100%
+    );
+  image-rendering: pixelated;
   position: relative;
   overflow: hidden;
 }
-.battle-bg::after {
+/* Scanline + pixel-grid overlay for GameBoy/GBA screen texture */
+.battle-bg::before {
   content: '';
   position: absolute;
-  bottom: 0; left: 0; right: 0; height: 62%;
+  inset: 0;
   background-image:
-    repeating-linear-gradient(0deg, transparent, transparent 7px, rgba(0,0,0,0.06) 7px, rgba(0,0,0,0.06) 8px),
-    repeating-linear-gradient(90deg, transparent, transparent 7px, rgba(0,0,0,0.04) 7px, rgba(0,0,0,0.04) 8px);
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.03) 3px, rgba(0,0,0,0.03) 4px);
   pointer-events: none;
+  z-index: 1;
+}
+/* Raid hub cave background */
+.battle-bg-cave {
+  background:
+    linear-gradient(to bottom,
+      #1A1A2E 0%,   #1A1A2E 15%,
+      #2D2B45 15%,  #2D2B45 30%,
+      #3D3558 30%,  #3D3558 44%,
+      #2A2240 44%,  #2A2240 58%,
+      #1E1830 58%,  #1E1830 72%,
+      #150F28 72%,  #150F28 100%
+    );
+  image-rendering: pixelated;
+  position: relative;
+  overflow: hidden;
+}
+.battle-bg-cave::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px);
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Enemy HP box (Gen 3 style) */
@@ -349,3 +388,59 @@ body {
 .float-c     { animation: floatC 5s ease-in-out infinite; }
 .drift       { animation: drift 12s ease-in-out infinite; }
 .blink-cursor{ animation: blink-cursor 1s step-end infinite; }
+
+/* ============================================================
+   COMBAT ANIMATIONS — PART 4
+   ============================================================ */
+
+/* Attacker lunges forward and snaps back */
+@keyframes lunge {
+  0%   { transform: translateX(0)   translateY(0)   scale(1);   }
+  20%  { transform: translateX(24px) translateY(-6px) scale(1.08); }
+  45%  { transform: translateX(40px) translateY(-10px) scale(1.12); }
+  65%  { transform: translateX(20px) translateY(-4px) scale(1.05); }
+  80%  { transform: translateX(-6px) translateY(0)   scale(0.98); }
+  100% { transform: translateX(0)   translateY(0)   scale(1);   }
+}
+.anim-lunge { animation: lunge 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Pokéball lunge forward when thrown */
+@keyframes ball-lunge {
+  0%   { transform: translateX(0)   translateY(0)   scale(1);   }
+  30%  { transform: translateX(30px) translateY(-16px) scale(1.15) rotate(90deg); }
+  60%  { transform: translateX(70px) translateY(-28px) scale(1.1)  rotate(180deg); }
+  100% { transform: translateX(120px) translateY(10px) scale(0.85) rotate(360deg); }
+}
+.anim-ball-lunge { animation: ball-lunge 0.7s ease-in both; }
+
+/* Defender flashes bright/red and shakes side-to-side */
+@keyframes flash-shake {
+  0%   { filter: brightness(1)   saturate(1);   transform: translateX(0); }
+  10%  { filter: brightness(3)   saturate(0.2); transform: translateX(-10px); }
+  22%  { filter: brightness(1.2) saturate(2) hue-rotate(330deg); transform: translateX(12px); }
+  36%  { filter: brightness(2.5) saturate(0.1); transform: translateX(-8px); }
+  50%  { filter: brightness(1.5) saturate(2) hue-rotate(330deg); transform: translateX(8px); }
+  65%  { filter: brightness(2)   saturate(0.3); transform: translateX(-5px); }
+  80%  { filter: brightness(1.2) saturate(1.5); transform: translateX(4px); }
+  100% { filter: brightness(1)   saturate(1);   transform: translateX(0); }
+}
+.anim-flash-shake { animation: flash-shake 0.55s ease-in-out both; }
+
+/* Sprite shrink-vanish (catch animation) */
+@keyframes catch-shrink {
+  0%   { transform: scale(1) rotate(0deg);    opacity: 1; filter: brightness(1); }
+  30%  { transform: scale(0.8) rotate(-5deg); opacity: 1; filter: brightness(4); }
+  60%  { transform: scale(0.4) rotate(5deg);  opacity: 0.6; }
+  100% { transform: scale(0) rotate(0deg);    opacity: 0; }
+}
+.anim-catch-shrink { animation: catch-shrink 0.65s ease-in both; }
+
+/* Pixel-art background retro overlay */
+.pixel-retro-overlay {
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.025) 3px, rgba(0,0,0,0.025) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.015) 3px, rgba(0,0,0,0.015) 4px);
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+

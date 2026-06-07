@@ -181,13 +181,13 @@ function BossHpBar({ boss }) {
 }
 
 /* Boss sprite with breathing animation + attack flash */
-function BossSprite({ isDefeated, shakeControls }) {
+function BossSprite({ isDefeated, shakeControls, isShaking }) {
   return (
     <motion.div
       animate={shakeControls}
       style={{
         width: 128, height: 128,
-        margin: '24px auto 16px',
+        margin: '0 auto 12px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexShrink: 0,
         transformOrigin: 'center bottom',
@@ -244,6 +244,7 @@ function BossSprite({ isDefeated, shakeControls }) {
         </motion.div>
       ) : (
         <motion.img
+          key={isShaking ? 'shaking' : 'idle'}
           src={BOSS_SPRITE_URL}
           alt="Giant Slaking of Sloth"
           onError={function(e) { e.target.style.opacity = '0.4' }}
@@ -255,6 +256,7 @@ function BossSprite({ isDefeated, shakeControls }) {
               a.play().catch(function() {})
             } catch(e) {}
           }}
+          className={isShaking ? 'pixel-sprite anim-flash-shake' : 'pixel-sprite'}
           style={{
             width: 128, height: 128,
             imageRendering: 'pixelated',
@@ -264,7 +266,7 @@ function BossSprite({ isDefeated, shakeControls }) {
             filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.5))',
             cursor: 'pointer',
           }}
-          animate={{ y: [0, -8, 0] }}
+          animate={isShaking ? {} : { y: [0, -8, 0] }}
           transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
         />
       )}
@@ -273,7 +275,7 @@ function BossSprite({ isDefeated, shakeControls }) {
 }
 
 /* Boss arena panel */
-function BossArena({ boss, onAttackFlash }) {
+function BossArena({ boss, onAttackFlash, isPlayerLunging, isBossShaking, playerSpriteId }) {
   var shakeControls = useAnimation()
   var currentHp = boss.current_hp !== undefined ? boss.current_hp : (boss.currentHp || 0)
   var isDefeated = currentHp <= 0
@@ -287,6 +289,8 @@ function BossArena({ boss, onAttackFlash }) {
       shakeControls.set({ x: 0 })
     }
   }, [onAttackFlash, shakeControls])
+
+  var PLAYER_BACK = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/back/${playerSpriteId || 157}.gif`
 
   return (
     <div style={{
@@ -316,21 +320,76 @@ function BossArena({ boss, onAttackFlash }) {
         COMMUNITY BOSS BATTLE
       </G3Header>
 
-      <div style={{
+      {/* ── Cave Battle Arena ── */}
+      <div className={isDefeated ? '' : 'battle-bg-cave'} style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '12px 16px 16px',
+        padding: '12px 16px 0',
         background: isDefeated
           ? 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)'
-          : 'repeating-linear-gradient(135deg, #F8F8ED 0px, #F8F8ED 24px, #F2EFE0 24px, #F2EFE0 26px)',
+          : undefined,
         position: 'relative',
         overflow: 'hidden',
         minHeight: 0,
       }}>
         <BossHpBar boss={boss} />
-        <BossSprite isDefeated={isDefeated} shakeControls={shakeControls} />
+
+        {/* Boss platform — stone oval */}
+        {!isDefeated && (
+          <div style={{
+            position: 'absolute',
+            right: '14%', bottom: '38%',
+            width: 180, height: 32,
+            background: 'linear-gradient(180deg, #8A7860 0%, #6A5840 55%, #4A3820 100%)',
+            border: '2px solid #302010',
+            boxShadow: 'inset 0 -3px 6px rgba(0,0,0,0.35), 0 3px 0 #201008',
+            borderRadius: '50%',
+            zIndex: 2,
+          }} />
+        )}
+
+        {/* Player platform — stone oval on left */}
+        {!isDefeated && (
+          <div style={{
+            position: 'absolute',
+            left: '8%', bottom: '14%',
+            width: 150, height: 40,
+            background: 'linear-gradient(180deg, #9A8870 0%, #7A6850 55%, #5A4830 100%)',
+            border: '2px solid #403020',
+            boxShadow: 'inset 0 -4px 8px rgba(0,0,0,0.3), 0 4px 0 #302010',
+            borderRadius: '50%',
+            zIndex: 2,
+          }} />
+        )}
+
+        {/* Player back sprite — lunges on attack */}
+        {!isDefeated && (
+          <motion.div
+            style={{
+              position: 'absolute',
+              left: '10%', bottom: '20%',
+              zIndex: 4,
+            }}
+            initial={{ x: -80, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <img
+              key={isPlayerLunging ? 'lunging' : 'idle'}
+              src={PLAYER_BACK}
+              alt="Your Pokémon"
+              className={`pixel-sprite ${isPlayerLunging ? 'anim-lunge' : ''}`}
+              style={{ width: 'auto', height: 88, imageRendering: 'pixelated' }}
+              onError={function(e) {
+                e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/157.png'
+              }}
+            />
+          </motion.div>
+        )}
+
+        <BossSprite isDefeated={isDefeated} shakeControls={shakeControls} isBossShaking={isBossShaking} />
 
         {!isDefeated && (
           <div style={{
@@ -707,7 +766,11 @@ function RaidStatsStrip({ boss, energy }) {
 
 export default function RaidHub() {
   /* Auth + settings from Zustand */
-  var { user, trainerName, raidEnergy, raidAttack: localRaidAttack } = useStore()
+  var { user, trainerName, raidEnergy, raidAttack: localRaidAttack, starterPokemon } = useStore()
+
+  /* Animation states for battle moves */
+  var [playerLunging, setPlayerLunging] = useState(false)
+  var [bossShaking, setBossShaking] = useState(false)
 
   /* Local state — boss is source-of-truth from DB */
   var [boss, setBoss] = useState({
@@ -841,8 +904,17 @@ export default function RaidHub() {
        but we tag it distinctly so the local message shows with gold stars) */
     pushLog(attackMsg)
 
-    /* Trigger the boss shake animation */
-    if (attackFlashRef.current) attackFlashRef.current()
+    /* Trigger the player lunge animation */
+    setPlayerLunging(true)
+    setTimeout(function() { setPlayerLunging(false) }, 600)
+
+    /* After 200ms, trigger the boss flash-shake */
+    setTimeout(function() {
+      setBossShaking(true)
+      setTimeout(function() { setBossShaking(false) }, 600)
+      /* Also run the framer-motion shake from the ref */
+      if (attackFlashRef.current) attackFlashRef.current()
+    }, 200)
   }, [user, boss, energy, trainerName])
 
   /* ---- Part 5: New Raid reset (resets DB back to full HP) ---- */
@@ -913,7 +985,13 @@ export default function RaidHub() {
       <RaidStatsStrip boss={boss} energy={energy} />
 
       {/* Boss arena */}
-      <BossArena boss={boss} onAttackFlash={attackFlashRef} />
+      <BossArena
+        boss={boss}
+        onAttackFlash={attackFlashRef}
+        isPlayerLunging={playerLunging}
+        isBossShaking={bossShaking}
+        playerSpriteId={starterPokemon ? starterPokemon.id : 157}
+      />
 
       {/* Battle menu */}
       <div style={{ height: 190, flexShrink: 0 }}>

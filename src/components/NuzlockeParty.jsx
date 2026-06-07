@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store'
 import { usePokemonCry } from '../hooks/usePokemonCry'
+import { supabase } from '../lib/supabase'
 
 /* ============================================================
    CONSTANTS & HELPERS
@@ -413,9 +414,9 @@ function EmptySlot() {
   )
 }
 
-/* ── "Add to Party" form (inline in party section) ── */
+/* ── Add to Party” form (inline in party section) ── */
 function AddPartyForm({ onClose }) {
-  const { addToParty, party } = useStore()
+  const { addNuzlockeTask, party } = useStore()
   const [taskName, setTaskName] = useState('')
   const [deadline, setDeadline] = useState('')
   const [pokemonId, setPokemonId] = useState(Math.floor(Math.random() * 151) + 1)
@@ -424,7 +425,7 @@ function AddPartyForm({ onClose }) {
 
   const handleSubmit = () => {
     if (!taskName.trim() || !deadline) return
-    addToParty(taskName.trim(), pokemonId, new Date(deadline).toISOString())
+    addNuzlockeTask(taskName.trim(), pokemonId, new Date(deadline).toISOString(), 'party')
     onClose()
   }
 
@@ -569,12 +570,16 @@ function AddPartyForm({ onClose }) {
 }
 
 /* ── Deadline Modal for "Move to Party" from Daycare ── */
-function DeadlineModal({ daycareItem, onConfirm, onClose }) {
+function DeadlineModal({ daycareItem, onClose }) {
+  const { addNuzlockeTask } = useStore()
   const [deadline, setDeadline] = useState('')
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!deadline) return
-    onConfirm(daycareItem.id, new Date(deadline).toISOString())
+    const pokemonId = Math.floor(Math.random() * 151) + 1
+    /* Delete old daycare row then insert new party row */
+    await supabase.from('nuzlocke_party').delete().eq('id', daycareItem.id)
+    await addNuzlockeTask(daycareItem.taskName, pokemonId, new Date(deadline).toISOString(), 'party')
     onClose()
   }
 
@@ -776,13 +781,13 @@ function DaycareRow({ item, partyFull, onMoveToParty, onDelete }) {
 
 /* ── Add to Daycare inline form ── */
 function AddDaycareForm() {
-  const { addToDaycare } = useStore()
+  const { addNuzlockeTask } = useStore()
   const [text, setText] = useState('')
 
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!text.trim()) return
-    addToDaycare(text.trim())
+    addNuzlockeTask(text.trim(), null, null, 'daycare')
     setText('')
   }
 
@@ -830,19 +835,32 @@ function AddDaycareForm() {
 export default function NuzlockeParty() {
   const {
     party, daycare,
-    completePartyTask, removeFromParty, checkFaintedTasks,
-    deleteDaycare, moveDaycareToParty,
+    fetchNuzlocke, addNuzlockeTask, updateNuzlockeStatus, nuzlockeLoading,
+    checkFaintedTasks,
   } = useStore()
 
   const [showAddParty, setShowAddParty]       = useState(false)
-  const [deadlineTarget, setDeadlineTarget]   = useState(null) // daycare item awaiting deadline prompt
+  const [deadlineTarget, setDeadlineTarget]   = useState(null)
 
-  /* Run faint check on mount and every 60 seconds */
+  /* Fetch from DB on mount + start faint-check interval */
   useEffect(() => {
+    fetchNuzlocke()
     checkFaintedTasks()
     const id = setInterval(checkFaintedTasks, 60_000)
     return () => clearInterval(id)
-  }, [checkFaintedTasks])
+  }, [fetchNuzlocke, checkFaintedTasks])
+
+  /* Delete a daycare item from DB */
+  const handleDeleteDaycare = useCallback(async (id) => {
+    await supabase.from('nuzlocke_party').delete().eq('id', id)
+    fetchNuzlocke()
+  }, [fetchNuzlocke])
+
+  /* Delete a party member from DB */
+  const handleRemoveParty = useCallback(async (id) => {
+    await supabase.from('nuzlocke_party').delete().eq('id', id)
+    fetchNuzlocke()
+  }, [fetchNuzlocke])
 
   const partyFull    = party.length >= 6
   const activeCount  = party.filter(p => p.status === 'active').length
@@ -854,6 +872,31 @@ export default function NuzlockeParty() {
     ...party,
     ...Array.from({ length: Math.max(0, 6 - party.length) }, (_, i) => ({ _empty: true, _key: i })),
   ]
+
+  /* Loading skeleton — prevents flash of empty party */
+  if (nuzlockeLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, height: '100%' }}>
+        <div style={{
+          background: '#F8F8ED', border: '4px solid #68A0B0', borderRadius: 8,
+          overflow: 'hidden', boxShadow: '2px 2px 0 rgba(80,140,160,0.4), 0 4px 16px rgba(0,0,0,0.2)',
+          padding: '12px 14px',
+        }}>
+          <div style={{
+            background: '#68B0B0', height: 28, borderRadius: '6px 6px 0 0',
+            marginBottom: 12, margin: '-12px -14px 12px',
+          }} />
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} style={{
+              height: 110, background: '#EDE8D0', border: '2px solid #C0B8A8',
+              borderRadius: 6, marginBottom: 8,
+              animation: 'pulse 1.5s ease-in-out infinite',
+            }} />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, height: '100%', overflowY: 'auto' }}>
@@ -929,8 +972,8 @@ export default function NuzlockeParty() {
                   <PartyCard
                     key={item.id}
                     member={item}
-                    onComplete={completePartyTask}
-                    onRemove={removeFromParty}
+                    onComplete={(id) => updateNuzlockeStatus(id, 'completed')}
+                    onRemove={handleRemoveParty}
                   />
                 )
               )}
@@ -1002,7 +1045,7 @@ export default function NuzlockeParty() {
                     item={item}
                     partyFull={partyFull}
                     onMoveToParty={(item) => setDeadlineTarget(item)}
-                    onDelete={deleteDaycare}
+                    onDelete={handleDeleteDaycare}
                   />
                 ))}
               </AnimatePresence>
@@ -1032,7 +1075,6 @@ export default function NuzlockeParty() {
         {deadlineTarget && (
           <DeadlineModal
             daycareItem={deadlineTarget}
-            onConfirm={moveDaycareToParty}
             onClose={() => setDeadlineTarget(null)}
           />
         )}
