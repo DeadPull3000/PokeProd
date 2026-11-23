@@ -1,3 +1,10 @@
+<picture>
+  <source media="(prefers-reduced-motion: no-preference)" srcset="./project-scan.gif">
+  <img src="./project-static.png" width="1056" alt="PokeProd ASCII project diagram">
+</picture>
+
+Complete tasks and build streaks. Supabase provides authentication and live updates for shared raid interactions.
+
 # PokeProd
 
 PokeProd is a Gamified Productivity App built with React, Tailwind CSS, Zustand, and Supabase. It uses a nostalgic Gen 3 Pokémon aesthetic to make managing your tasks and habits fun and engaging.
