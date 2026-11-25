@@ -68,6 +68,8 @@ export const createTasksSlice = (set, get) => ({
       tasks: s.tasks.map((t) => (t.id === id ? { ...t, is_completed: true, completed: true } : t)),
     }))
     state.gainXP(element, xpGain)
+    state.recordDailyActivity?.({ tasksDelta: 1 })
+    state.strikeDailyBoss?.(element)
 
     if (state.session) {
       const { error } = await supabase

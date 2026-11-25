@@ -12,6 +12,9 @@ import { createNuzlockeSlice } from './nuzlockeStore'
 import { createSecretBaseSlice } from './secretBaseStore'
 import { createHabitsSlice } from './habitsStore'
 import { createRaidSlice } from './raidStore'
+import { createPokedexSlice } from './pokedexStore'
+import { createBattleSlice } from './battleStore'
+import { createStatsSlice } from './statsStore'
 
 export { ELEMENTS, EVOLUTION_LINES, STARTERS, BG_CYCLES, BG_META } from '../constants/gameData'
 
@@ -26,6 +29,9 @@ export const useStore = create((set, get) => ({
   ...createSecretBaseSlice(set, get),
   ...createHabitsSlice(set, get),
   ...createRaidSlice(set, get),
+  ...createPokedexSlice(set, get),
+  ...createBattleSlice(set, get),
+  ...createStatsSlice(set, get),
 }))
 
 /* Shallow domain hooks — prevent unrelated re-renders across tabs */
@@ -157,5 +163,39 @@ export const useHabits = () =>
       updateHabitStreak: s.updateHabitStreak,
       completeHabit: s.completeHabit,
       clearShinyEncounter: s.clearShinyEncounter,
+    }))
+  )
+
+export const usePokedex = () =>
+  useStore(
+    useShallow((s) => ({
+      pokedexEntries: s.pokedexEntries,
+      pokedexLoading: s.pokedexLoading,
+      pokedexCloudSynced: s.pokedexCloudSynced,
+      fetchPokedex: s.fetchPokedex,
+      registerPokemon: s.registerPokemon,
+    }))
+  )
+
+export const useBattle = () =>
+  useStore(
+    useShallow((s) => ({
+      dailyBoss: s.dailyBoss,
+      gymBadges: s.gymBadges,
+      battleLoading: s.battleLoading,
+      battleCloudSynced: s.battleCloudSynced,
+      fetchBattleState: s.fetchBattleState,
+      strikeDailyBoss: s.strikeDailyBoss,
+    }))
+  )
+
+export const useStats = () =>
+  useStore(
+    useShallow((s) => ({
+      dailySnapshots: s.dailySnapshots,
+      statsLoading: s.statsLoading,
+      statsCloudSynced: s.statsCloudSynced,
+      fetchSnapshots: s.fetchSnapshots,
+      recordDailyActivity: s.recordDailyActivity,
     }))
   )

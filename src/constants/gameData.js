@@ -146,6 +146,7 @@ export const NAV_ITEMS = [
   { id: 'dailyhabits', emoji: '🌦️', label: 'DAILY HABITS',shortLabel: 'HABITS' },
   { id: 'raidhub',     emoji: '🗡️', label: 'RAID HUB',    shortLabel: 'RAID' },
   { id: 'battle',      emoji: '⚔️', label: 'BATTLE',      shortLabel: 'BATTLE' },
+  { id: 'pokedex',     emoji: '📖', label: 'POKéDEX',     shortLabel: 'DEX' },
   { id: 'stats',       emoji: '📊', label: 'STATS',       shortLabel: 'STATS' },
   { id: 'settings',    emoji: '⚙️', label: 'SETTINGS',    shortLabel: 'OPTS' },
 ]
@@ -161,3 +162,63 @@ export function mapWeatherCode(code) {
     return { condition: 'Snow', typeBoost: 'Ice & Steel', icon: '❄️', color: '#06b6d4' }
   return { condition: 'Cloudy', typeBoost: 'Normal & Fairy', icon: '🌫️', color: '#6b7280' }
 }
+
+/* Meta-Achievement definitions (Phase 5.3) */
+export const ACHIEVEMENTS = [
+  {
+    key: 'first_quest',
+    emoji: '🏅',
+    title: 'FIRST STEPS',
+    description: 'Complete your first quest on Journey.',
+    check: (s) => s.tasks?.some((t) => t.is_completed || t.completed) || (s.completedToday || 0) > 0,
+  },
+  {
+    key: 'on_fire',
+    emoji: '🔥',
+    title: 'ON FIRE',
+    description: 'Reach a 7-day habit streak.',
+    check: (s) => s.habits?.some((h) => (h.streak || 0) >= 7),
+  },
+  {
+    key: 'shiny_luck',
+    emoji: '✨',
+    title: 'LUCKY STAR',
+    description: 'Catch a Shiny Pokémon.',
+    check: (s) => (s.caughtShinies?.length || 0) > 0 || s.pokedexEntries?.some((p) => p.isShiny),
+  },
+  {
+    key: 'homeowner',
+    emoji: '🏠',
+    title: 'HOMEOWNER',
+    description: 'Place 3+ items in your Secret Base.',
+    check: (s) => (s.placedItems?.length || 0) >= 3,
+  },
+  {
+    key: 'gym_badge',
+    emoji: '⚔️',
+    title: 'GYM CHALLENGER',
+    description: 'Defeat a Daily Gym Leader.',
+    check: (s) => (s.gymBadges?.length || 0) >= 1,
+  },
+  {
+    key: 'dex_researcher',
+    emoji: '📖',
+    title: 'POKéDEX PRO',
+    description: 'Register 10+ Pokémon species.',
+    check: (s) => new Set((s.pokedexEntries || []).map((p) => p.pokemonId)).size >= 10,
+  },
+  {
+    key: 'ace_trainer',
+    emoji: '🌟',
+    title: 'ACE TRAINER',
+    description: 'Reach Trainer Level 5.',
+    check: (s) => (s.trainerLevel || 1) >= 5,
+  },
+  {
+    key: 'evolution_master',
+    emoji: '🧬',
+    title: 'EVOLUTION MASTER',
+    description: 'Fully evolve a multi-step Project.',
+    check: (s) => s.projects?.some((p) => p.completed || (p.currentStage || 0) >= 2),
+  },
+]

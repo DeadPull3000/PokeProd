@@ -18,12 +18,9 @@ const SecretBase = lazy(() => import('./components/SecretBase'))
 const DailyHabits = lazy(() => import('./components/DailyHabits'))
 const RaidHub = lazy(() => import('./components/RaidHub'))
 const SettingsTab = lazy(() => import('./components/Settings'))
-const BattleTab = lazy(() =>
-  import('./components/PlaceholderTabs').then((m) => ({ default: m.BattleTab }))
-)
-const StatsTab = lazy(() =>
-  import('./components/PlaceholderTabs').then((m) => ({ default: m.StatsTab }))
-)
+const BattleTab = lazy(() => import('./components/BattleTab'))
+const PokedexTab = lazy(() => import('./components/PokedexTab'))
+const StatsTab = lazy(() => import('./components/StatsTab'))
 
 function TabFallback() {
   return (
@@ -45,6 +42,7 @@ function MainContent({ activeTab }) {
     dailyhabits: <DailyHabits />,
     raidhub: <RaidHub />,
     battle: <BattleTab />,
+    pokedex: <PokedexTab />,
     stats: <StatsTab />,
     settings: <SettingsTab />,
   }

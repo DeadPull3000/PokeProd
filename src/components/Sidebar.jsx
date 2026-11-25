@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth, useSettings, useUI, useXp } from '../store'
+import { useAuth, useSettings, useUI, useXp, useBattle } from '../store'
 import { XP_PER_LEVEL, NAV_ITEMS } from '../constants/gameData'
+import { GYM_LEADERS } from '../constants/pokedex151'
 import { G3Header, SpriteImage } from './ui'
 
 /* ── SVG radar chart ── */
@@ -247,6 +248,7 @@ export default function Sidebar({ xpData, elements, onSignOut }) {
   const { trainerLevel, totalXP } = useXp()
   const { trainerName, starterPokemon } = useSettings()
   const { user } = useAuth()
+  const { gymBadges } = useBattle()
 
   const maxXP = Math.max(...Object.values(xpData), 1)
   const xpIntoLevel = totalXP % XP_PER_LEVEL
@@ -324,6 +326,18 @@ export default function Sidebar({ xpData, elements, onSignOut }) {
             <div className="pk-label" style={{ fontSize: '0.38rem', color: 'var(--g3-text-muted)', marginTop: 2 }}>
               {totalXP.toLocaleString()} XP TOTAL
             </div>
+            {gymBadges.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 3, marginTop: 3, flexWrap: 'wrap' }}>
+                {gymBadges.map((b) => {
+                  const g = GYM_LEADERS.find((l) => l.badgeType === b.badgeType)
+                  return (
+                    <span key={b.badgeType} title={g?.badgeName || b.badgeType} style={{ fontSize: '0.7rem', lineHeight: 1 }}>
+                      {g?.badgeEmoji || '🏅'}
+                    </span>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           <div style={{ width: '100%' }}>

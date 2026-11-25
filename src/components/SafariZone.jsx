@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useXp, useSettings } from '../store'
+import { useXp, useSettings, usePokedex, useBattle } from '../store'
 import { ITEMS_URL } from './safariHelpers'
 import { DialogueBox, SpriteImage } from './ui'
 
@@ -172,6 +172,8 @@ function SetupScreen({ onStart }) {
 export default function SafariZone() {
   const { gainXP } = useXp()
   const { starterPokemon } = useSettings()
+  const { registerPokemon } = usePokedex()
+  const { strikeDailyBoss } = useBattle()
 
   const [phase, setPhase] = useState('setup')
   const [session, setSession] = useState(null)
@@ -283,6 +285,8 @@ export default function SafariZone() {
     setPhase('caught')
     const xpGain = session.minutes * 8
     gainXP('psychic', xpGain)
+    registerPokemon(session.pokemon.id, false, 'safari')
+    strikeDailyBoss('psychic', 1.5)
     setDialogue(`Gotcha! ${session.pokemon.name} was caught!\n\n+${xpGain} PSYCHIC XP earned!`)
   }
 

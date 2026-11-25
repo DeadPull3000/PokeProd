@@ -58,6 +58,9 @@ export const createNuzlockeSlice = (set, get) => ({
       state.pushToast?.(`Failed to save Nuzlocke task: ${error.message}`, 'error')
       return
     }
+    if (pokemonId) {
+      state.registerPokemon?.(pokemonId, false, 'nuzlocke')
+    }
     await get().fetchNuzlocke()
   },
 

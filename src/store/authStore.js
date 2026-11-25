@@ -15,6 +15,9 @@ export const createAuthSlice = (set, get) => ({
     state.fetchSecretBase()
     state.fetchHabits()
     state.loadCaughtShinies()
+    state.fetchPokedex?.()
+    state.fetchBattleState?.()
+    state.fetchSnapshots?.()
   },
 
   checkSession: async () => {
@@ -62,6 +65,9 @@ export const createAuthSlice = (set, get) => ({
       placedItems: [],
       habits: [],
       caughtShinies: [],
+      pokedexEntries: [],
+      gymBadges: [],
+      dailySnapshots: [],
       nuzlockeLoading: false,
       secretBaseLoading: false,
       habitsLoading: false,

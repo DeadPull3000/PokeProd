@@ -132,8 +132,10 @@ export const createHabitsSlice = (set, get) => ({
       ),
     }))
 
-    /* Reward XP for habit check-in */
+    /* Reward XP for habit check-in & strike daily boss */
     state.addXp(20)
+    state.recordDailyActivity?.({ habitsDelta: 1 })
+    state.strikeDailyBoss?.('grass', 0.5)
 
     if (state.session) {
       state.updateHabitStreak(habitId, newStreak, lastCompletedDate)
@@ -153,6 +155,7 @@ export const createHabitsSlice = (set, get) => ({
         _shinyEncounter: shinyEntry,
       })
       saveShiniesToStorage(state.session?.user?.id, nextShinies)
+      state.registerPokemon?.(shinyEntry.pokemonId, true, 'habit_shiny')
       return shinyEntry
     }
 

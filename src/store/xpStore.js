@@ -74,6 +74,10 @@ export const createXpSlice = (set, get) => ({
         }
       }
       set(updates)
+      const starterId = updates.starterPokemon?.id || state.starterPokemon?.id
+      if (starterId) {
+        get().registerPokemon?.(starterId, false, 'starter')
+      }
     } else if (result.error && result.error.code === 'PGRST116') {
       /* Profile row doesn't exist yet for legacy user — initialize cleanly */
       const defaultName = (state.session.user.email?.split('@')[0] || 'TRAINER RED').toUpperCase()
@@ -83,6 +87,9 @@ export const createXpSlice = (set, get) => ({
         xp: 0,
       })
       set({ totalXP: 0, trainerLevel: 1, trainerName: defaultName })
+      if (state.starterPokemon?.id) {
+        get().registerPokemon?.(state.starterPokemon.id, false, 'starter')
+      }
     }
   },
 
@@ -96,6 +103,7 @@ export const createXpSlice = (set, get) => ({
     if (newLevel > prevLevel) {
       state.pushToast?.(`LEVEL UP! You reached Lv.${newLevel}!`, 'success', 4500)
     }
+    state.recordDailyActivity?.({ tasksDelta: 0, habitsDelta: 0 })
 
     if (state.session) {
       const { error } = await supabase

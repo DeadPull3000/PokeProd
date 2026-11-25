@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence, useAnimation } from 'framer-motion'
-import { useAuth, useSettings } from '../store'
+import { useAuth, useSettings, usePokedex } from '../store'
 import { supabase } from '../lib/supabase'
 import { SPRITE_BASE, itemUrl } from '../constants/gameData'
 import { G3, G3Header, G3Panel, SpriteImage, HPBar } from './ui'
@@ -580,6 +580,7 @@ function RaidStatsStrip({ boss, energy }) {
 export default function RaidHub() {
   const { user } = useAuth()
   const { trainerName, starterPokemon } = useSettings()
+  const { registerPokemon } = usePokedex()
 
   const [playerLunging, setPlayerLunging] = useState(false)
   const [bossShaking, setBossShaking] = useState(false)
@@ -688,7 +689,11 @@ export default function RaidHub() {
       setTimeout(() => setBossShaking(false), 600)
       if (attackFlashRef.current) attackFlashRef.current()
     }, 200)
-  }, [user, boss, energy, trainerName])
+
+    if (newHp <= 0) {
+      registerPokemon(289, false, 'raid')
+    }
+  }, [user, boss, energy, trainerName, registerPokemon])
 
   const handleReset = useCallback(async () => {
     const result = await supabase

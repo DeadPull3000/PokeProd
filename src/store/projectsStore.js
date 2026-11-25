@@ -1,6 +1,6 @@
 /* Cloud-Synced Evolution Projects Slice (Phase 2.4 / Sprint 1) */
 import { supabase } from '../lib/supabase'
-import { generateLocalId } from '../constants/gameData'
+import { EVOLUTION_LINES, generateLocalId } from '../constants/gameData'
 
 const FALLBACK_KEY = (userId) => `pokeprod_projects_v1_${userId || 'local'}`
 
@@ -202,8 +202,13 @@ export const createProjectsSlice = (set, get) => ({
 
     /* Award XP (+25 per subtask, +50 bonus on final evolution) */
     state.gainXP('grass', completed ? 75 : 25)
+    state.recordDailyActivity?.({ tasksDelta: 1 })
     if (evolved) {
       state.pushToast?.(`What?! ${proj.name} is evolving!`, 'success', 3500)
+      const evoMon = EVOLUTION_LINES[proj.evoLineId]?.stages[stage]
+      if (evoMon?.id) {
+        state.registerPokemon?.(evoMon.id, false, 'project')
+      }
     }
 
     const userId = state.session?.user?.id
