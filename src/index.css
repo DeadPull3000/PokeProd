@@ -39,6 +39,70 @@
   --tile-tree-cap:   #48A830;
 }
 
+/* ============================================================
+   OPTIONAL NOSTALGIC THEMES (Phase 5.2 — Gen 3 remains default)
+   ============================================================ */
+[data-theme="gen1"] {
+  --g3-cream:         #E8F8D8;
+  --g3-cream-light:   #F2FCE6;
+  --g3-cream-dark:    #CFE8B8;
+  --g3-border-orange: #306230;
+  --g3-border-teal:   #306230;
+  --g3-header-teal:   #306230;
+  --g3-header-dark:   #0F380F;
+  --g3-text:          #0F380F;
+  --g3-text-muted:    #306230;
+}
+
+[data-theme="gen2"] {
+  --g3-cream:         #FFFEF0;
+  --g3-cream-light:   #FFFFFF;
+  --g3-cream-dark:    #F0ECD0;
+  --g3-border-orange: #B02000;
+  --g3-border-teal:   #3838B8;
+  --g3-header-teal:   #3838B8;
+  --g3-header-dark:   #1E1E88;
+}
+
+[data-theme="gen4"] {
+  --g3-cream:         #F0F2FA;
+  --g3-cream-light:   #FFFFFF;
+  --g3-cream-dark:    #DFE4F2;
+  --g3-border-orange: #E05858;
+  --g3-border-teal:   #4A6CF7;
+  --g3-header-teal:   #4A6CF7;
+  --g3-header-dark:   #2846B8;
+}
+
+[data-theme="gen5"] {
+  --g3-cream:         #FFFFFF;
+  --g3-cream-light:   #F8FAFC;
+  --g3-cream-dark:    #E2E8F0;
+  --g3-border-orange: #E05030;
+  --g3-border-teal:   #2D6DB5;
+  --g3-header-teal:   #2D6DB5;
+  --g3-header-dark:   #1B487D;
+}
+
+/* Holographic TCG card shimmer (Phase 5.1) */
+@keyframes tcg-holo {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.tcg-holo-card {
+  background-image: linear-gradient(
+    125deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 215, 0, 0.25) 25%,
+    rgba(56, 189, 248, 0.25) 50%,
+    rgba(236, 72, 153, 0.25) 75%,
+    rgba(255, 255, 255, 0.2) 100%
+  );
+  background-size: 200% 200%;
+  animation: tcg-holo 4s ease infinite;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body, #root {

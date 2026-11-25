@@ -1,4 +1,4 @@
-/* Trainer Preferences & Audio/Visual Settings Slice */
+/* Trainer Preferences, Notifications, Theme & Audio/Visual Settings Slice */
 import { supabase } from '../lib/supabase'
 
 const SETTINGS_KEY = 'pokeprod_settings_v1'
@@ -9,6 +9,17 @@ const DEFAULT_SETTINGS = {
   soundEffects: true,
   music: false,
   backgroundCycle: 'Auto',
+  theme: 'gen3',
+  notificationsEnabled: false,
+}
+
+export function applyDocumentTheme(theme = 'gen3') {
+  if (typeof document === 'undefined') return
+  if (!theme || theme === 'gen3') {
+    document.documentElement.removeAttribute('data-theme')
+  } else {
+    document.documentElement.setAttribute('data-theme', theme)
+  }
 }
 
 function loadLocalSettings() {
@@ -23,13 +34,18 @@ function loadLocalSettings() {
 
 function saveLocalSettings(state) {
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
-      trainerName: state.trainerName,
-      starterPokemon: state.starterPokemon,
-      soundEffects: state.soundEffects,
-      music: state.music,
-      backgroundCycle: state.backgroundCycle,
-    }))
+    localStorage.setItem(
+      SETTINGS_KEY,
+      JSON.stringify({
+        trainerName: state.trainerName,
+        starterPokemon: state.starterPokemon,
+        soundEffects: state.soundEffects,
+        music: state.music,
+        backgroundCycle: state.backgroundCycle,
+        theme: state.theme,
+        notificationsEnabled: state.notificationsEnabled,
+      })
+    )
   } catch {
     /* ignore storage errors */
   }
@@ -37,6 +53,7 @@ function saveLocalSettings(state) {
 
 export const createSettingsSlice = (set, get) => {
   const initial = loadLocalSettings()
+  applyDocumentTheme(initial.theme)
 
   return {
     trainerName: initial.trainerName,
@@ -44,6 +61,8 @@ export const createSettingsSlice = (set, get) => {
     soundEffects: initial.soundEffects,
     music: initial.music,
     backgroundCycle: initial.backgroundCycle,
+    theme: initial.theme,
+    notificationsEnabled: initial.notificationsEnabled,
 
     setTrainerName: (name) => {
       const normalized = (name || '').toUpperCase()
@@ -63,15 +82,23 @@ export const createSettingsSlice = (set, get) => {
     updateSettings: async (patch) => {
       set(patch)
       const state = get()
+      if (patch.theme !== undefined) {
+        applyDocumentTheme(patch.theme)
+      }
       saveLocalSettings(state)
 
-      if (patch.starterPokemon && state.session) {
+      if ((patch.starterPokemon || patch.theme !== undefined) && state.session) {
+        const dbPatch = {}
+        if (patch.starterPokemon) {
+          dbPatch.starter_id = patch.starterPokemon.id
+          dbPatch.starter_name = patch.starterPokemon.name
+        }
+        if (patch.theme !== undefined) {
+          dbPatch.theme = patch.theme
+        }
         await supabase
           .from('profiles')
-          .update({
-            starter_id: patch.starterPokemon.id,
-            starter_name: patch.starterPokemon.name,
-          })
+          .update(dbPatch)
           .eq('id', state.session.user.id)
       }
     },
