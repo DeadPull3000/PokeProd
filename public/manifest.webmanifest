@@ -1,0 +1,17 @@
+{
+  "name": "Lofi HeartGold — PokéProd",
+  "short_name": "PokéProd",
+  "description": "Gen 3 Pokémon-inspired gamified productivity RPG with tasks, focus timers, Nuzlocke party, Pokédex, Daily Gym battles, and Co-Op Raids.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F8ED",
+  "theme_color": "#68B0B0",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

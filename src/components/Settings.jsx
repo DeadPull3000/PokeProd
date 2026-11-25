@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
-import { useSettings } from '../store'
+import { useSettings, useStore } from '../store'
 import { STARTERS, BG_CYCLES, BG_META } from '../constants/gameData'
 import { G3, G3Header, G3Panel, SpriteImage } from './ui'
+import { downloadSaveJson } from '../utils/exportSave'
 
 function SettingRow({ label, emoji, children, hint }) {
   return (
@@ -212,6 +213,26 @@ export default function SettingsTab() {
           <SettingRow label="TIME OF DAY" emoji="🕐" hint={BG_META[backgroundCycle] ? BG_META[backgroundCycle].hint : ''}>
             <BgCyclePicker value={backgroundCycle} onChange={(v) => updateSettings({ backgroundCycle: v })} />
           </SettingRow>
+        </div>
+      </G3Panel>
+
+      <G3Panel variant="teal" style={{ flexShrink: 0 }}>
+        <G3Header icon="💾">SAVE & DATA EXPORT</G3Header>
+        <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <p style={{ fontFamily: G3.vt, fontSize: '1rem', color: G3.textMuted, flex: 1, minWidth: 180 }}>
+            Download a complete JSON backup of your tasks, projects, habits, badges, Secret Base, and Pokédex.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              const state = useStore.getState()
+              downloadSaveJson(state)
+              state.pushToast?.('Save data exported to JSON!', 'success', 2500)
+            }}
+            className="g3-btn g3-btn-sm"
+          >
+            EXPORT SAVE (.JSON) ▶
+          </button>
         </div>
       </G3Panel>
 
