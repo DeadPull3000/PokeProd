@@ -1,63 +1,91 @@
-import React, { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import './index.css'
 import Background from './components/Background'
 import AudioController from './components/AudioController'
-import Sidebar from './components/Sidebar'
+import Sidebar, { MobileBottomNav, MobileTrainerHeader } from './components/Sidebar'
 import JourneyTab from './components/JourneyTab'
-import SafariZone from './components/SafariZone'
-import NuzlockeParty from './components/NuzlockeParty'
-import SecretBase from './components/SecretBase'
-import DailyHabits from './components/DailyHabits'
-import RaidHub from './components/RaidHub'
-import SettingsTab from './components/Settings'
 import Auth from './components/Auth'
-import { BattleTab, StatsTab } from './components/PlaceholderTabs'
-import { useStore, ELEMENTS } from './store'
+import { ErrorBoundary, ToastContainer } from './components/ui'
+import { useAuth, useSettings, useUI, useXp, ELEMENTS } from './store'
 import { supabase } from './lib/supabase'
+import { animSprite } from './constants/gameData'
 
-/* ── Tab content switcher ── */
-function MainContent({ activeTab }) {
-  const tabMap = {
-    journey:     <JourneyTab />,
-    safari:      <SafariZone />,
-    nuzlocke:    <NuzlockeParty />,
-    secretbase:  <SecretBase />,
-    dailyhabits: <DailyHabits />,
-    raidhub:     <RaidHub />,
-    battle:      <BattleTab />,
-    stats:       <StatsTab />,
-    settings:    <SettingsTab />,
-  }
+/* Code-split heavy tabs so initial bundle stays compact (Phase 4.4) */
+const SafariZone = lazy(() => import('./components/SafariZone'))
+const NuzlockeParty = lazy(() => import('./components/NuzlockeParty'))
+const SecretBase = lazy(() => import('./components/SecretBase'))
+const DailyHabits = lazy(() => import('./components/DailyHabits'))
+const RaidHub = lazy(() => import('./components/RaidHub'))
+const SettingsTab = lazy(() => import('./components/Settings'))
+const BattleTab = lazy(() =>
+  import('./components/PlaceholderTabs').then((m) => ({ default: m.BattleTab }))
+)
+const StatsTab = lazy(() =>
+  import('./components/PlaceholderTabs').then((m) => ({ default: m.StatsTab }))
+)
+
+function TabFallback() {
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={activeTab}
-        className="h-full"
-        initial={{ opacity: 0, x: 10 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -10 }}
-        transition={{ duration: 0.18, ease: 'easeInOut' }}
-      >
-        {tabMap[activeTab] || <JourneyTab />}
-      </motion.div>
-    </AnimatePresence>
+    <div className="h-full flex flex-col items-center justify-center gap-3">
+      <img src={animSprite(175)} alt="Loading tab" style={{ width: 48, height: 48, imageRendering: 'pixelated' }} />
+      <span className="pk-label" style={{ fontSize: '0.45rem', color: 'var(--g3-text-muted)' }}>
+        LOADING AREA...
+      </span>
+    </div>
   )
 }
 
-/* ── Pixel-art loading splash ── */
+function MainContent({ activeTab }) {
+  const tabMap = {
+    journey: <JourneyTab />,
+    safari: <SafariZone />,
+    nuzlocke: <NuzlockeParty />,
+    secretbase: <SecretBase />,
+    dailyhabits: <DailyHabits />,
+    raidhub: <RaidHub />,
+    battle: <BattleTab />,
+    stats: <StatsTab />,
+    settings: <SettingsTab />,
+  }
+  return (
+    <ErrorBoundary key={activeTab}>
+      <Suspense fallback={<TabFallback />}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            className="h-full"
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.18, ease: 'easeInOut' }}
+          >
+            {tabMap[activeTab] || <JourneyTab />}
+          </motion.div>
+        </AnimatePresence>
+      </Suspense>
+    </ErrorBoundary>
+  )
+}
+
 function LoadingSplash() {
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 200,
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      background: 'rgba(10, 20, 30, 0.75)',
-      backdropFilter: 'blur(4px)',
-      gap: 14,
-    }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 200,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(10, 20, 30, 0.75)',
+        backdropFilter: 'blur(4px)',
+        gap: 14,
+      }}
+    >
       <motion.img
-        src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/175.gif"
+        src={animSprite(175)}
         alt="Loading..."
         style={{ width: 64, height: 64, imageRendering: 'pixelated' }}
         animate={{ y: [0, -10, 0] }}
@@ -71,83 +99,77 @@ function LoadingSplash() {
 }
 
 export default function App() {
-  const { activeTab, xp, backgroundCycle, authLoading, user, checkSession, setSession, signOut } = useStore()
-  const isSafari = activeTab === 'safari'
+  const { activeTab, setOffline, pushToast } = useUI()
+  const { xp } = useXp()
+  const { backgroundCycle } = useSettings()
+  const { authLoading, user, checkSession, setSession, signOut } = useAuth()
 
-  /* Pass forced scene to Background only when not 'Auto' */
+  const isSafari = activeTab === 'safari'
   const forcedScene = backgroundCycle !== 'Auto' ? backgroundCycle : null
 
-  /* Bootstrap session on mount + subscribe to auth state changes */
-  useEffect(function() {
+  useEffect(() => {
     checkSession()
 
-    var listener = supabase.auth.onAuthStateChange(function(event, session) {
+    const listener = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
     })
 
-    return function() {
-      if (listener && listener.data && listener.data.subscription) {
+    const handleOnline = () => {
+      setOffline(false)
+      pushToast('Connection restored!', 'success', 2500)
+    }
+    const handleOffline = () => {
+      setOffline(true)
+      pushToast('You are offline — changes may not sync.', 'warning', 4000)
+    }
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      if (listener?.data?.subscription) {
         listener.data.subscription.unsubscribe()
       }
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
     }
-  }, [])
+  }, [checkSession, setSession, setOffline, pushToast])
 
   return (
     <div className="w-screen h-screen overflow-hidden">
-      {/* AudioController lives outside Background so it never unmounts on tab change */}
       <AudioController />
+      <ToastContainer />
       <Background forcedScene={forcedScene}>
-
-        {/* ── Loading splash while session is being resolved ── */}
         {authLoading && <LoadingSplash />}
 
-        {/* ── Auth screen (no user) ── */}
-        {!authLoading && !user && (
-          <Auth onSession={setSession} />
-        )}
+        {!authLoading && !user && <Auth onSession={setSession} />}
 
-        {/* ── Main dashboard (authenticated) ── */}
         {!authLoading && user && (
-          <div
-            className="w-full h-full flex items-center justify-center"
-            style={{ padding: '16px 14px' }}
-          >
-            <div
-              style={{
-                width: '100%',
-                maxWidth: 1100,
-                height: '100%',
-                maxHeight: 830,
-                display: 'flex',
-                gap: 12,
-                background: 'rgba(255, 255, 255, 0.06)',
-                borderRadius: 14,
-                padding: '14px',
-                backdropFilter: 'blur(1px)',
-                border: '1px solid rgba(255,255,255,0.12)',
-              }}
-            >
-              {/* Sidebar */}
-              <div style={{ height: '100%', flexShrink: 0 }}>
+          <div className="w-full h-full flex items-center justify-center p-2 sm:p-3.5">
+            <div className="app-shell">
+              <MobileTrainerHeader xpData={xp} elements={ELEMENTS} onSignOut={signOut} />
+
+              <div className="desktop-only-sidebar" style={{ height: '100%', flexShrink: 0 }}>
                 <Sidebar xpData={xp} elements={ELEMENTS} onSignOut={signOut} />
               </div>
 
-              {/* Main content */}
               <div
                 className={isSafari ? '' : 'g3-panel'}
                 style={{
                   flex: 1,
+                  minHeight: 0,
                   height: '100%',
                   overflow: 'hidden',
                   borderRadius: 8,
-                  padding: isSafari ? 0 : '14px',
-                  /* Force crisp cream, strip any browser dark-mode influence */
+                  padding: isSafari ? 0 : '12px',
                   background: isSafari ? 'transparent' : '#F8F8ED',
                   color: '#383028',
                 }}
               >
                 <MainContent activeTab={activeTab} />
               </div>
+
+              <MobileBottomNav />
             </div>
           </div>
         )}

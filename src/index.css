@@ -444,3 +444,135 @@ body {
   pointer-events: none;
 }
 
+/* ============================================================
+   RESPONSIVE LAYOUT HELPERS (Phase 1.4 Mobile-First)
+   ============================================================ */
+
+.app-shell {
+  width: 100%;
+  max-width: 1100px;
+  height: 100%;
+  max-height: 830px;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 14px;
+  backdrop-filter: blur(1px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.journey-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.journey-route-col {
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.secret-base-grid {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.nuzlocke-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.raid-battle-menu-body {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  overflow: hidden;
+}
+
+.raid-action-col {
+  width: 200px;
+  flex-shrink: 0;
+  border-left: 1px solid #E8E0D0;
+}
+
+.safari-action-pane {
+  height: 42%;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+}
+
+.safari-menu-col {
+  width: 38%;
+  flex-shrink: 0;
+}
+
+.mobile-only-nav { display: none; }
+.desktop-only-sidebar { display: flex; }
+
+@media (max-width: 767px) {
+  .desktop-only-sidebar { display: none !important; }
+  .mobile-only-nav { display: flex; }
+
+  .app-shell {
+    max-height: 100%;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 10px;
+  }
+
+  .journey-layout {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .journey-route-col {
+    width: 100%;
+    overflow-y: visible;
+  }
+
+  .secret-base-grid {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .nuzlocke-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .raid-battle-menu-body {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .raid-action-col {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid #E8E0D0;
+  }
+
+  .safari-action-pane {
+    height: auto;
+    min-height: 45%;
+    flex-direction: column;
+  }
+
+  .safari-menu-col {
+    width: 100%;
+    border-top: 2px solid var(--g3-border-orange);
+  }
+}
+

@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useStore, ELEMENTS, EVOLUTION_LINES } from '../store'
+import { ELEMENTS, EVOLUTION_LINES } from '../constants/gameData'
+import { useTasks, useProjects, useXp } from '../store'
 import RouteMap from './RouteMap'
 import { ROUTE_PATH } from '../routeData'
 import ProjectCard from './ProjectCard'
+import { G3Header, SpriteImage } from './ui'
 
 /* ── XP Orb ── */
 function XPOrb({ element, onComplete }) {
-  const el = ELEMENTS[element]
+  const el = ELEMENTS[element] || ELEMENTS.fire
   return (
     <motion.div
       className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
@@ -16,12 +18,16 @@ function XPOrb({ element, onComplete }) {
       transition={{ duration: 0.9, ease: 'easeOut' }}
       onAnimationComplete={onComplete}
     >
-      <div style={{
-        background: el.color, color: 'white',
-        border: `3px solid ${el.borderColor}`,
-        boxShadow: `0 0 16px 6px ${el.glowColor}`,
-        borderRadius: 5, padding: '3px 8px',
-      }}>
+      <div
+        style={{
+          background: el.color,
+          color: 'white',
+          border: `3px solid ${el.borderColor}`,
+          boxShadow: `0 0 16px 6px ${el.glowColor}`,
+          borderRadius: 5,
+          padding: '3px 8px',
+        }}
+      >
         <span className="pk-label pk-white" style={{ fontSize: '0.48rem' }}>+XP!</span>
       </div>
     </motion.div>
@@ -37,8 +43,11 @@ function ElementPill({ el, selected, onClick }) {
       style={{
         border: `2px solid ${selected ? el.borderColor : 'var(--g3-border-orange)'}`,
         background: selected ? el.bgHex : 'var(--g3-cream-light)',
-        borderRadius: 4, padding: '3px 8px',
-        display: 'flex', alignItems: 'center', gap: 5,
+        borderRadius: 4,
+        padding: '3px 8px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
         cursor: 'pointer',
       }}
       whileHover={{ scale: 1.04 }}
@@ -54,9 +63,7 @@ function ElementPill({ el, selected, onClick }) {
 
 /* ── Individual task row ── */
 function TaskRow({ task }) {
-  const { toggleTaskCompletion, deleteTask } = useStore()
-  /* Support both cloud shape (task_name, element_type, is_completed)
-     and legacy local shape (text, element, completed) */
+  const { toggleTaskCompletion, deleteTask } = useTasks()
   const text = task.task_name || task.text || ''
   const element = task.element_type || task.element || 'fire'
   const isDone = task.is_completed || task.completed || false
@@ -77,69 +84,90 @@ function TaskRow({ task }) {
       initial={{ opacity: 0, x: -12 }}
       animate={
         isDone
-          ? { opacity: 0, x: 40, filter: `brightness(2) drop-shadow(0 0 8px ${el.glowColor})` }
+          ? { opacity: 0.5, x: 10, filter: `drop-shadow(0 0 4px ${el.glowColor})` }
           : { opacity: 1, x: 0, filter: 'none' }
       }
       exit={{ opacity: 0, x: 30 }}
-      transition={{ layout: { duration: 0.2 }, default: isDone ? { duration: 0.6 } : { duration: 0.25 } }}
+      transition={{ layout: { duration: 0.2 }, default: { duration: 0.25 } }}
       className="g3-task group relative"
       style={{ borderLeftColor: el.color }}
     >
-      {/* Item icon */}
       <img src={el.itemSprite} alt="" className="pixel-sprite flex-shrink-0" style={{ width: 18, height: 18 }} />
 
-      {/* Checkbox */}
       <button
+        type="button"
+        aria-label={`Complete quest ${text}`}
         onClick={handleCheck}
         style={{
-          width: 18, height: 18, flexShrink: 0,
+          width: 18,
+          height: 18,
+          flexShrink: 0,
           border: `2px solid ${isDone ? el.color : 'var(--g3-text-muted)'}`,
-          borderRadius: 2, background: isDone ? el.color : 'white',
-          cursor: 'pointer', color: 'white',
-          fontFamily: 'var(--font-pixel)', fontSize: '0.45rem',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          borderRadius: 2,
+          background: isDone ? el.color : 'white',
+          cursor: isDone ? 'default' : 'pointer',
+          color: 'white',
+          fontFamily: 'var(--font-pixel)',
+          fontSize: '0.45rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           transition: 'all 0.15s',
         }}
       >
         {isDone && '✓'}
       </button>
 
-      {/* Text */}
-      <p className="pk-dialogue-text flex-1 min-w-0 truncate" style={{
-        fontSize: '1.1rem',
-        textDecoration: isDone ? 'line-through' : 'none',
-        color: isDone ? '#A0988A' : 'var(--g3-text)',
-      }}>
+      <p
+        className="pk-dialogue-text flex-1 min-w-0 truncate"
+        style={{
+          fontSize: '1.1rem',
+          textDecoration: isDone ? 'line-through' : 'none',
+          color: isDone ? '#A0988A' : 'var(--g3-text)',
+        }}
+      >
         {text}
       </p>
 
-      {/* Element badge */}
-      <span className="pk-label flex-shrink-0" style={{
-        fontSize: '0.38rem', padding: '1px 5px',
-        border: `1px solid ${el.borderColor}`,
-        borderRadius: 3, background: el.bgHex, color: el.borderColor,
-      }}>
+      <span
+        className="pk-label flex-shrink-0"
+        style={{
+          fontSize: '0.38rem',
+          padding: '1px 5px',
+          border: `1px solid ${el.borderColor}`,
+          borderRadius: 3,
+          background: el.bgHex,
+          color: el.borderColor,
+        }}
+      >
         {el.emoji} {el.label}
       </span>
 
-      {/* Delete (hover) */}
       <button
+        type="button"
+        aria-label={`Delete quest ${text}`}
         onClick={() => deleteTask(task.id)}
-        className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+        className="opacity-70 sm:opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
         style={{
-          width: 20, height: 20,
+          width: 20,
+          height: 20,
           border: '2px solid var(--g3-accent-red)',
-          borderRadius: 2, background: '#FFF0F0',
-          color: 'var(--g3-accent-red)', cursor: 'pointer',
-          fontFamily: 'var(--font-pixel)', fontSize: '0.42rem',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          borderRadius: 2,
+          background: '#FFF0F0',
+          color: 'var(--g3-accent-red)',
+          cursor: 'pointer',
+          fontFamily: 'var(--font-pixel)',
+          fontSize: '0.42rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         ✕
       </button>
 
       <AnimatePresence>
-        {showOrb && <XPOrb element={task.element} onComplete={() => setShowOrb(false)} />}
+        {showOrb && <XPOrb element={element} onComplete={() => setShowOrb(false)} />}
       </AnimatePresence>
     </motion.div>
   )
@@ -147,7 +175,7 @@ function TaskRow({ task }) {
 
 /* ── Add task form ── */
 function AddTaskForm() {
-  const { addTask } = useStore()
+  const { addTask } = useTasks()
   const [text, setText] = useState('')
   const [element, setElement] = useState('fire')
   const [expanded, setExpanded] = useState(false)
@@ -162,9 +190,7 @@ function AddTaskForm() {
   }
 
   return (
-    <div style={{
-      background: 'var(--g3-cream-light)', border: '1px solid #D8D0B8', borderRadius: 5,
-    }}>
+    <div style={{ background: 'var(--g3-cream-light)', border: '1px solid #D8D0B8', borderRadius: 5 }}>
       <form onSubmit={handleSubmit}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px' }}>
           <span className="pk-label" style={{ flexShrink: 0, color: 'var(--g3-border-teal)' }}>▶</span>
@@ -172,17 +198,13 @@ function AddTaskForm() {
             ref={inputRef}
             type="text"
             value={text}
-            onChange={e => setText(e.target.value)}
+            onChange={(e) => setText(e.target.value)}
             onFocus={() => setExpanded(true)}
             placeholder="What quest awaits today?"
             className="g3-input"
             style={{ fontSize: '1.1rem', padding: '4px 8px' }}
           />
-          <button
-            type="submit"
-            disabled={!text.trim()}
-            className="g3-btn g3-btn-sm flex-shrink-0"
-          >
+          <button type="submit" disabled={!text.trim()} className="g3-btn g3-btn-sm flex-shrink-0">
             ADD
           </button>
         </div>
@@ -201,7 +223,7 @@ function AddTaskForm() {
                   SELECT TYPE:
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                  {Object.values(ELEMENTS).map(el => (
+                  {Object.values(ELEMENTS).map((el) => (
                     <ElementPill key={el.id} el={el} selected={element === el.id} onClick={setElement} />
                   ))}
                 </div>
@@ -216,14 +238,14 @@ function AddTaskForm() {
 
 /* ── Create Project Form ── */
 function CreateProjectForm({ onClose }) {
-  const { addProject } = useStore()
+  const { addProject } = useProjects()
   const [name, setName] = useState('')
   const [evoLineId, setEvoLineId] = useState(0)
   const [subTasks, setSubTasks] = useState(['', '', ''])
 
   const handleSubmit = () => {
     if (!name.trim()) return
-    const filled = subTasks.filter(t => t.trim())
+    const filled = subTasks.filter((t) => t.trim())
     if (!filled.length) return
     addProject(name.trim(), evoLineId, subTasks)
     onClose()
@@ -236,16 +258,9 @@ function CreateProjectForm({ onClose }) {
       exit={{ opacity: 0, y: -8 }}
       className="g3-panel-teal overflow-hidden"
     >
-      {/* Header */}
-      <div className="g3-header">
-        <span className="pk-label pk-white" style={{ fontSize: '0.46rem' }}>✏️ NEW PROJECT</span>
-        <div style={{ display: 'flex', gap: 3, marginLeft: 'auto' }}>
-          <div className="g3-pill" /><div className="g3-pill" /><div className="g3-pill" />
-        </div>
-      </div>
+      <G3Header icon="✏️" pillCount={3}>NEW PROJECT</G3Header>
 
       <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {/* Name */}
         <div>
           <div className="pk-label" style={{ fontSize: '0.4rem', marginBottom: 4, color: 'var(--g3-text-muted)' }}>
             PROJECT NAME:
@@ -253,7 +268,7 @@ function CreateProjectForm({ onClose }) {
           <input
             type="text"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             placeholder="Enter project name..."
             className="g3-input"
             style={{ fontSize: '1.1rem', padding: '4px 8px' }}
@@ -261,7 +276,6 @@ function CreateProjectForm({ onClose }) {
           />
         </div>
 
-        {/* Evolution line selector */}
         <div>
           <div className="pk-label" style={{ fontSize: '0.4rem', marginBottom: 4, color: 'var(--g3-text-muted)' }}>
             EVOLUTION LINE:
@@ -273,23 +287,21 @@ function CreateProjectForm({ onClose }) {
                 type="button"
                 onClick={() => setEvoLineId(i)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
                   border: `2px solid ${evoLineId === i ? line.color : 'var(--g3-border-orange)'}`,
                   borderRadius: 5,
                   background: evoLineId === i ? `${line.color}18` : 'var(--g3-cream-light)',
-                  padding: '4px 6px', cursor: 'pointer',
+                  padding: '4px 6px',
+                  cursor: 'pointer',
                   transition: 'all 0.1s',
                 }}
               >
                 {evoLineId === i && (
                   <span className="pk-label" style={{ fontSize: '0.38rem', color: line.color }}>▶</span>
                 )}
-                <img
-                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${line.stages[0].id}.gif`}
-                  className="pixel-sprite"
-                  style={{ width: 28, height: 28 }}
-                  alt=""
-                />
+                <SpriteImage pokemonId={line.stages[0].id} alt={line.stages[0].name} size={28} />
                 <span className="pk-label" style={{ fontSize: '0.38rem', color: line.color }}>
                   {line.stages[0].name}
                 </span>
@@ -298,10 +310,9 @@ function CreateProjectForm({ onClose }) {
           </div>
         </div>
 
-        {/* Sub-tasks */}
         <div>
           <div className="pk-label" style={{ fontSize: '0.4rem', marginBottom: 4, color: 'var(--g3-text-muted)' }}>
-            SUB-TASKS ({subTasks.filter(t => t.trim()).length} added):
+            SUB-TASKS ({subTasks.filter((t) => t.trim()).length} added):
           </div>
           {subTasks.map((st, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
@@ -311,7 +322,7 @@ function CreateProjectForm({ onClose }) {
               <input
                 type="text"
                 value={st}
-                onChange={e => {
+                onChange={(e) => {
                   const next = [...subTasks]
                   next[i] = e.target.value
                   setSubTasks(next)
@@ -325,12 +336,16 @@ function CreateProjectForm({ onClose }) {
           {subTasks.length < 5 && (
             <button
               type="button"
-              onClick={() => setSubTasks(prev => [...prev, ''])}
+              onClick={() => setSubTasks((prev) => [...prev, ''])}
               className="g3-btn-cream pk-label"
               style={{
-                fontSize: '0.38rem', padding: '3px 8px',
+                fontSize: '0.38rem',
+                padding: '3px 8px',
                 border: '1px dashed var(--g3-border-orange)',
-                borderRadius: 3, background: 'transparent', cursor: 'pointer', color: 'var(--g3-text-muted)',
+                borderRadius: 3,
+                background: 'transparent',
+                cursor: 'pointer',
+                color: 'var(--g3-text-muted)',
                 fontFamily: 'var(--font-pixel)',
               }}
             >
@@ -339,7 +354,6 @@ function CreateProjectForm({ onClose }) {
           )}
         </div>
 
-        {/* Buttons */}
         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
           <button className="g3-btn g3-btn-sm g3-btn-orange" onClick={onClose}>CANCEL</button>
           <button className="g3-btn g3-btn-sm" onClick={handleSubmit} disabled={!name.trim()}>
@@ -358,18 +372,11 @@ function RouteMapPanel({ completedToday }) {
 
   return (
     <div className="g3-panel-teal overflow-hidden" style={{ flexShrink: 0 }}>
-      {/* Header */}
-      <div className="g3-header">
-        <span className="pk-label pk-white" style={{ fontSize: '0.46rem' }}>🗺️ ROUTE 1</span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 3 }}>
-          <div className="g3-pill" /><div className="g3-pill" />
-        </div>
-      </div>
+      <G3Header icon="🗺️" pillCount={2}>ROUTE 1</G3Header>
 
       <div style={{ padding: '10px 8px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
         <RouteMap completedCount={completedToday} />
 
-        {/* Progress label */}
         <div style={{ width: '100%', textAlign: 'center' }}>
           <div className="pk-label" style={{ fontSize: '0.38rem', color: 'var(--g3-text-muted)' }}>
             QUESTS TODAY:
@@ -386,14 +393,16 @@ function RouteMapPanel({ completedToday }) {
           </div>
         </div>
 
-        {/* Tip */}
-        <div style={{
-          width: '100%',
-          background: 'var(--g3-cream-light)',
-          border: '1px solid #D8D0B8',
-          borderRadius: 4, padding: '5px 8px',
-          textAlign: 'center',
-        }}>
+        <div
+          style={{
+            width: '100%',
+            background: 'var(--g3-cream-light)',
+            border: '1px solid #D8D0B8',
+            borderRadius: 4,
+            padding: '5px 8px',
+            textAlign: 'center',
+          }}
+        >
           <p className="pk-dialogue-text" style={{ fontSize: '0.95rem', color: 'var(--g3-text-muted)', lineHeight: 1.35 }}>
             {completedToday === 0
               ? '✨ Complete a quest to start your journey!'
@@ -407,51 +416,46 @@ function RouteMapPanel({ completedToday }) {
   )
 }
 
-/* ============================================================
-   Main Journey Tab -- Two-column layout
-   ============================================================ */
 export default function JourneyTab() {
-  const { tasks, tasksLoading, tasksError, fetchTasks, projects, completedToday, completeSubTask, deleteProject } = useStore()
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const activeTasks = tasks.filter(t => !(t.is_completed || t.completed))
+  const { tasks, tasksLoading, tasksError, fetchTasks } = useTasks()
+  const { projects, projectsLoading, projectsCloudSynced, fetchProjects, completeSubTask, deleteProject } = useProjects()
+  const { completedToday } = useXp()
 
-  /* Fetch cloud tasks when the Journey tab mounts */
-  useEffect(function() {
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const activeTasks = tasks.filter((t) => !(t.is_completed || t.completed))
+
+  useEffect(() => {
     fetchTasks()
-  }, [])
+    fetchProjects()
+  }, [fetchTasks, fetchProjects])
 
   return (
-    <div style={{ display: 'flex', gap: 12, height: '100%', overflow: 'hidden' }}>
-
-      {/* ══════════════════════════════════════════
-          LEFT COLUMN — Quests & Projects
-      ══════════════════════════════════════════ */}
+    <div className="journey-layout">
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto', minWidth: 0, paddingRight: 2 }}>
-
-        {/* Quick Quests section */}
         <div className="g3-panel-teal overflow-hidden" style={{ flexShrink: 0 }}>
-          {/* Section header */}
-          <div className="g3-header">
-            <span className="pk-label pk-white" style={{ fontSize: '0.46rem' }}>⚔️ QUICK QUESTS</span>
-            <span className="pk-label pk-white" style={{ fontSize: '0.38rem', opacity: 0.75, marginLeft: 4 }}>
-              {activeTasks.length} remaining
-            </span>
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 3 }}>
-              <div className="g3-pill" /><div className="g3-pill" /><div className="g3-pill" />
-            </div>
-          </div>
+          <G3Header
+            icon="⚔️"
+            pillCount={3}
+            rightSlot={
+              <span className="pk-label pk-white" style={{ fontSize: '0.38rem', opacity: 0.8 }}>
+                {activeTasks.length} remaining
+              </span>
+            }
+          >
+            QUICK QUESTS
+          </G3Header>
 
           <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {/* Add task form */}
             <AddTaskForm />
 
-            {/* Task list */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <AnimatePresence mode="popLayout">
                 {tasksLoading ? (
                   <motion.div
                     key="loading"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     style={{ textAlign: 'center', padding: '16px 0', color: 'var(--g3-text-muted)' }}
                   >
                     <span className="pk-label" style={{ fontSize: '0.5rem' }}>LOADING QUESTS...</span>
@@ -459,7 +463,9 @@ export default function JourneyTab() {
                 ) : tasksError ? (
                   <motion.div
                     key="error"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     style={{ padding: '8px 10px', background: '#FFF0F0', border: '2px solid var(--g3-accent-red)', borderRadius: 4 }}
                   >
                     <p className="pk-dialogue-text" style={{ fontSize: '0.95rem', color: 'var(--g3-accent-red)' }}>
@@ -469,11 +475,15 @@ export default function JourneyTab() {
                 ) : tasks.length === 0 ? (
                   <motion.div
                     key="empty"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     style={{
-                      textAlign: 'center', padding: '16px 0',
+                      textAlign: 'center',
+                      padding: '16px 0',
                       background: 'var(--g3-cream-light)',
-                      border: '1px dashed #D8D0B8', borderRadius: 5,
+                      border: '1px dashed #D8D0B8',
+                      borderRadius: 5,
                     }}
                   >
                     <div style={{ fontSize: '1.6rem', marginBottom: 4 }}>⭐</div>
@@ -482,79 +492,99 @@ export default function JourneyTab() {
                     </p>
                   </motion.div>
                 ) : (
-                  tasks.map(task => <TaskRow key={task.id} task={task} />)
+                  tasks.map((task) => <TaskRow key={task.id} task={task} />)
                 )}
               </AnimatePresence>
             </div>
           </div>
         </div>
 
-        {/* Projects section */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {/* Projects header row */}
           <div className="g3-panel overflow-hidden">
-            <div className="g3-header">
-              <span className="pk-label pk-white" style={{ fontSize: '0.46rem' }}>🧬 PROJECTS</span>
-              <span className="pk-label pk-white" style={{ fontSize: '0.38rem', opacity: 0.75, marginLeft: 4 }}>
-                {projects.length} active
-              </span>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
-                <div className="g3-pill" /><div className="g3-pill" />
-                <motion.button
-                  onClick={() => setShowCreateForm(v => !v)}
-                  className="g3-btn g3-btn-sm"
-                  style={{ padding: '3px 8px', fontSize: '0.38rem' }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.96 }}
-                >
-                  {showCreateForm ? '✕ CANCEL' : '+ NEW PROJECT'}
-                </motion.button>
-              </div>
-            </div>
-        </div>
+            <G3Header
+              icon="🧬"
+              pillCount={2}
+              rightSlot={
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  {!projectsCloudSynced && (
+                    <span
+                      title="Run supabase/migrations/001_v2_foundation_and_rls.sql to sync Projects to cloud"
+                      className="pk-label"
+                      style={{
+                        fontSize: '0.3rem',
+                        color: '#604010',
+                        background: '#F8E040',
+                        padding: '1px 4px',
+                        borderRadius: 3,
+                      }}
+                    >
+                      LOCAL
+                    </span>
+                  )}
+                  <span className="pk-label pk-white" style={{ fontSize: '0.38rem', opacity: 0.75 }}>
+                    {projects.length} active
+                  </span>
+                  <motion.button
+                    onClick={() => setShowCreateForm((v) => !v)}
+                    className="g3-btn g3-btn-sm"
+                    style={{ padding: '3px 8px', fontSize: '0.38rem' }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.96 }}
+                  >
+                    {showCreateForm ? '✕ CANCEL' : '+ NEW PROJECT'}
+                  </motion.button>
+                </div>
+              }
+            >
+              PROJECTS
+            </G3Header>
+          </div>
 
-          {/* Create project form */}
           <AnimatePresence>
-            {showCreateForm && (
-              <CreateProjectForm onClose={() => setShowCreateForm(false)} />
-            )}
+            {showCreateForm && <CreateProjectForm onClose={() => setShowCreateForm(false)} />}
           </AnimatePresence>
 
-          {/* Project cards */}
-          <AnimatePresence mode="popLayout">
-            {projects.length === 0 && !showCreateForm ? (
-              <motion.div
-                key="no-projects"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                style={{
-                  textAlign: 'center', padding: '14px 0',
-                  background: 'var(--g3-cream)',
-                  border: '1px dashed var(--g3-border-orange)', borderRadius: 8,
-                }}
-              >
-                <div style={{ fontSize: '1.6rem', marginBottom: 4 }}>🥚</div>
-                <p className="pk-dialogue-text" style={{ fontSize: '1rem', color: 'var(--g3-text-muted)' }}>
-                  Create a project to start evolving!
-                </p>
-              </motion.div>
-            ) : (
-              projects.map(proj => (
-                <ProjectCard
-                  key={proj.id}
-                  project={proj}
-                  onCompleteSubTask={completeSubTask}
-                  onDeleteProject={() => deleteProject(proj.id)}
-                />
-              ))
-            )}
-          </AnimatePresence>
+          {projectsLoading ? (
+            <div style={{ textAlign: 'center', padding: '14px 0', color: 'var(--g3-text-muted)' }}>
+              <span className="pk-label" style={{ fontSize: '0.42rem' }}>LOADING PROJECTS...</span>
+            </div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {projects.length === 0 && !showCreateForm ? (
+                <motion.div
+                  key="no-projects"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  style={{
+                    textAlign: 'center',
+                    padding: '14px 0',
+                    background: 'var(--g3-cream)',
+                    border: '1px dashed var(--g3-border-orange)',
+                    borderRadius: 8,
+                  }}
+                >
+                  <div style={{ fontSize: '1.6rem', marginBottom: 4 }}>🥚</div>
+                  <p className="pk-dialogue-text" style={{ fontSize: '1rem', color: 'var(--g3-text-muted)' }}>
+                    Create a project to start evolving!
+                  </p>
+                </motion.div>
+              ) : (
+                projects.map((proj) => (
+                  <ProjectCard
+                    key={proj.id}
+                    project={proj}
+                    onCompleteSubTask={completeSubTask}
+                    onDeleteProject={() => deleteProject(proj.id)}
+                  />
+                ))
+              )}
+            </AnimatePresence>
+          )}
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════
-          RIGHT COLUMN — Route Map
-      ══════════════════════════════════════════ */}
-      <div style={{ width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+      <div className="journey-route-col">
         <RouteMapPanel completedToday={completedToday} />
       </div>
     </div>

@@ -1,23 +1,23 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SCENES, getTimeOfDay } from '../scenes'
+import { useUI } from '../store'
+
+/* Pre-generated starfield avoids impure Math.random calls during React render */
+const STARS = Array.from({ length: 90 }, (_, i) => ({
+  id: i,
+  x: ((i * 73 + 17) % 100),
+  y: ((i * 41 + 9) % 65),
+  size: 0.9 + (i % 4) * 0.55,
+  delay: (i % 7) * 0.4,
+  duration: 1.5 + (i % 5) * 0.45,
+}))
 
 /* ── Stars (night only) ── */
 function StarField() {
-  const stars = useRef(
-    Array.from({ length: 90 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 65,
-      size: Math.random() * 2.5 + 0.8,
-      delay: Math.random() * 3,
-      duration: 1.5 + Math.random() * 2,
-    }))
-  ).current
-
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {stars.map(s => (
+      {STARS.map((s) => (
         <motion.div
           key={s.id}
           className="absolute rounded-full bg-white"
@@ -26,7 +26,6 @@ function StarField() {
           transition={{ duration: s.duration, delay: s.delay, repeat: Infinity, ease: 'easeInOut' }}
         />
       ))}
-      {/* Shooting stars */}
       <motion.div
         className="absolute top-[8%] left-0 h-px rounded-full"
         style={{ width: 80, background: 'linear-gradient(to right, transparent, white)' }}
@@ -50,9 +49,9 @@ function Clouds({ scene }) {
     <>
       {[
         { top: '10%', left: '4%', delay: 0, scale: 1.1 },
-        { top: '6%',  left: '32%', delay: 3, scale: 0.8 },
+        { top: '6%', left: '32%', delay: 3, scale: 0.8 },
         { top: '16%', right: '8%', delay: 5, scale: 1.0 },
-        { top: '4%',  right: '38%', delay: 1.5, scale: 0.65 },
+        { top: '4%', right: '38%', delay: 1.5, scale: 0.65 },
       ].map((c, i) => (
         <motion.div
           key={i}
@@ -61,18 +60,22 @@ function Clouds({ scene }) {
           animate={{ x: [0, 14, -4, 0] }}
           transition={{ duration: 22 + i * 4, delay: c.delay, repeat: Infinity, ease: 'easeInOut' }}
         >
-          <span style={{
-            fontSize: `${2.2 * c.scale}rem`,
-            filter: isDay ? 'drop-shadow(0 3px 6px rgba(0,0,0,0.12))' : 'none',
-            opacity: isDay ? 0.92 : 0.3,
-          }}>☁️</span>
+          <span
+            style={{
+              fontSize: `${2.2 * c.scale}rem`,
+              filter: isDay ? 'drop-shadow(0 3px 6px rgba(0,0,0,0.12))' : 'none',
+              opacity: isDay ? 0.92 : 0.3,
+            }}
+          >
+            ☁️
+          </span>
         </motion.div>
       ))}
     </>
   )
 }
 
-/* ── Ground layer with tree silhouettes or flowers ── */
+/* ── Ground layer ── */
 function Ground({ scene }) {
   const data = SCENES[scene]
   const isNight = scene === 'night'
@@ -86,14 +89,14 @@ function Ground({ scene }) {
       />
       {(isNight || isEvening) && (
         <div className="absolute bottom-0 left-0 right-0 flex items-end justify-around px-8 opacity-50">
-          {['🌲','🌳','🌲','🌳','🌲','🌳','🌲','🌳','🌲'].map((t, i) => (
+          {['🌲', '🌳', '🌲', '🌳', '🌲', '🌳', '🌲', '🌳', '🌲'].map((t, i) => (
             <span key={i} style={{ fontSize: `${1.4 + (i % 3) * 0.4}rem`, marginBottom: '-2px' }}>{t}</span>
           ))}
         </div>
       )}
       {data.groundFlowers && (
         <div className="absolute bottom-0 left-0 right-0 flex items-end justify-around px-6 opacity-60">
-          {['🌸','🌺','🌻','🌸','🌼','🌺','🌻','🌸','🌼','🌺'].map((f, i) => (
+          {['🌸', '🌺', '🌻', '🌸', '🌼', '🌺', '🌻', '🌸', '🌼', '🌺'].map((f, i) => (
             <span key={i} style={{ fontSize: '1.1rem', marginBottom: '-2px' }}>{f}</span>
           ))}
         </div>
@@ -102,7 +105,7 @@ function Ground({ scene }) {
   )
 }
 
-/* ── Real Pokémon Sprite (pixel-scaled, hoverable) ── */
+/* ── Floating Pokémon Sprite ── */
 function FloatingPokemon({ pokemon }) {
   const [tooltip, setTooltip] = useState(false)
 
@@ -124,7 +127,7 @@ function FloatingPokemon({ pokemon }) {
           imageRendering: 'pixelated',
           filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))',
         }}
-        onError={e => { e.target.style.display = 'none' }}
+        onError={(e) => { e.currentTarget.style.display = 'none' }}
       />
       <AnimatePresence>
         {tooltip && (
@@ -147,8 +150,8 @@ function FloatingPokemon({ pokemon }) {
   )
 }
 
-/* ── Sun / Moon / Evening Sun ── */
-function CelestialBody({ data, scene }) {
+/* ── Sun / Moon ── */
+function CelestialBody({ data }) {
   if (!data) return null
   return (
     <motion.div
@@ -157,13 +160,15 @@ function CelestialBody({ data, scene }) {
       animate={{ y: [0, -6, 0] }}
       transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
     >
-      <div style={{
-        width: `${data.size}px`,
-        height: `${data.size}px`,
-        borderRadius: '50%',
-        background: data.color,
-        boxShadow: `0 0 ${data.size * 0.7}px ${data.size * 0.3}px ${data.glow}`,
-      }} />
+      <div
+        style={{
+          width: `${data.size}px`,
+          height: `${data.size}px`,
+          borderRadius: '50%',
+          background: data.color,
+          boxShadow: `0 0 ${data.size * 0.7}px ${data.size * 0.3}px ${data.glow}`,
+        }}
+      />
     </motion.div>
   )
 }
@@ -171,11 +176,10 @@ function CelestialBody({ data, scene }) {
 /* ── Main Background ── */
 export default function Background({ children, forcedScene }) {
   const [clockScene, setClockScene] = useState(() => getTimeOfDay())
+  const { isOffline } = useUI()
 
-  /* Map the backgroundCycle setting values to scene keys */
   const cycleToScene = { Morning: 'morning', Day: 'afternoon', Evening: 'evening', Night: 'night' }
   const scene = forcedScene && cycleToScene[forcedScene] ? cycleToScene[forcedScene] : clockScene
-
   const sceneData = SCENES[scene]
 
   useEffect(() => {
@@ -191,7 +195,6 @@ export default function Background({ children, forcedScene }) {
 
   return (
     <div className="relative w-full h-full overflow-hidden" style={{ imageRendering: 'pixelated' }}>
-      {/* Sky gradient */}
       <AnimatePresence mode="wait">
         <motion.div
           key={scene}
@@ -204,10 +207,8 @@ export default function Background({ children, forcedScene }) {
         />
       </AnimatePresence>
 
-      {/* Overlay */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: sceneData.overlayGradient }} />
 
-      {/* Stars */}
       <AnimatePresence>
         {isNight && (
           <motion.div className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 2 }}>
@@ -216,13 +217,9 @@ export default function Background({ children, forcedScene }) {
         )}
       </AnimatePresence>
 
-      {/* Clouds */}
       {sceneData.clouds && <Clouds scene={scene} />}
+      <CelestialBody data={sceneData.sunMoon} />
 
-      {/* Sun / Moon */}
-      <CelestialBody data={sceneData.sunMoon} scene={scene} />
-
-      {/* Evening horizon sun */}
       {sceneData.eveningSun && (
         <motion.div
           className="absolute pointer-events-none"
@@ -230,18 +227,20 @@ export default function Background({ children, forcedScene }) {
           animate={{ y: [0, 5, 0] }}
           transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
         >
-          <div style={{
-            width: '84px', height: '84px', borderRadius: '50%',
-            background: 'radial-gradient(circle, #fef3c7, #fb923c)',
-            boxShadow: '0 0 70px 35px rgba(249,115,22,0.5)',
-          }} />
+          <div
+            style={{
+              width: '84px',
+              height: '84px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, #fef3c7, #fb923c)',
+              boxShadow: '0 0 70px 35px rgba(249,115,22,0.5)',
+            }}
+          />
         </motion.div>
       )}
 
-      {/* Ground */}
       <Ground scene={scene} />
 
-      {/* Floating Pokémon Sprites */}
       <AnimatePresence mode="wait">
         <motion.div
           key={scene + '-pokemon'}
@@ -257,8 +256,13 @@ export default function Background({ children, forcedScene }) {
         </motion.div>
       </AnimatePresence>
 
-      {/* Scene badge */}
-      <div className="absolute top-3 right-3 z-20">
+      {/* Scene + Offline badge */}
+      <div className="absolute top-3 right-3 z-20 hidden sm:flex items-center gap-2">
+        {isOffline && (
+          <div className="g3-panel px-2 py-1" style={{ borderColor: '#D04030' }}>
+            <span className="pk-label pk-red">OFFLINE</span>
+          </div>
+        )}
         <motion.div
           key={scene}
           initial={{ opacity: 0, y: -8 }}
@@ -270,12 +274,8 @@ export default function Background({ children, forcedScene }) {
         </motion.div>
       </div>
 
-      {/* Pixel-grid retro overlay for GBA screen feel */}
-      <div
-        className="absolute inset-0 z-[9] pointer-events-none pixel-retro-overlay"
-      />
+      <div className="absolute inset-0 z-[9] pointer-events-none pixel-retro-overlay" />
 
-      {/* Content */}
       <div className="relative z-10 w-full h-full">
         {children}
       </div>

@@ -1,67 +1,35 @@
-import React, { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
+import { animSprite } from '../constants/gameData'
+import { DialogueBox, G3Header } from './ui'
 
-/* Prof Oak / Eevee placeholder sprite */
-var OAK_SPRITE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/133.gif'
+const OAK_SPRITE = animSprite(133)
+const INTRO_TEXT =
+  'Hello there! Welcome to the world of productivity! Are you a new trainer, or are you returning?'
 
-/* Intro text — typewriter reveal */
-var INTRO_TEXT = "Hello there! Welcome to the world of productivity! My name is Oak. People call me the Pokemon Professor! Are you a new Trainer, or are you returning?"
-
-/* ── Typewriter ── */
-function Typewriter({ text, speed }) {
-  var [displayed, setDisplayed] = useState('')
-  var [done, setDone] = useState(false)
-
-  useEffect(function() {
-    setDisplayed('')
-    setDone(false)
-    var i = 0
-    var interval = setInterval(function() {
-      i++
-      setDisplayed(text.slice(0, i))
-      if (i >= text.length) {
-        clearInterval(interval)
-        setDone(true)
-      }
-    }, speed || 28)
-    return function() { clearInterval(interval) }
-  }, [text, speed])
-
-  return (
-    <span>
-      {displayed}
-      {!done && <span style={{ opacity: 0.4, animation: 'blink 0.7s steps(1) infinite' }}>|</span>}
-    </span>
-  )
-}
-
-/* ── Pixel loading bar ── */
 function PixelLoader() {
   return (
     <div style={{ display: 'flex', gap: 3, justifyContent: 'center', alignItems: 'center', height: 24 }}>
-      {[0, 1, 2, 3].map(function(i) {
-        return (
-          <motion.div
-            key={i}
-            style={{ width: 10, height: 10, background: 'var(--g3-border-teal)', borderRadius: 1 }}
-            animate={{ opacity: [0.2, 1, 0.2] }}
-            transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.18 }}
-          />
-        )
-      })}
+      {[0, 1, 2, 3].map((i) => (
+        <motion.div
+          key={i}
+          style={{ width: 10, height: 10, background: 'var(--g3-border-teal)', borderRadius: 1 }}
+          animate={{ opacity: [0.2, 1, 0.2] }}
+          transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.18 }}
+        />
+      ))}
     </div>
   )
 }
 
-/* ── Main Auth component ── */
 export default function Auth({ onSession }) {
-  var [mode, setMode] = useState('choice')   // 'choice' | 'login' | 'register'
-  var [email, setEmail] = useState('')
-  var [password, setPassword] = useState('')
-  var [loading, setLoading] = useState(false)
-  var [error, setError] = useState(null)
-  var [success, setSuccess] = useState(null)
+  const [mode, setMode] = useState('choice')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [success, setSuccess] = useState(null)
 
   function clearForm() {
     setEmail('')
@@ -75,12 +43,12 @@ export default function Auth({ onSession }) {
     if (!email.trim() || !password) return
     setLoading(true)
     setError(null)
-    var result = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+    const result = await supabase.auth.signInWithPassword({ email: email.trim(), password })
     setLoading(false)
     if (result.error) {
       setError(result.error.message)
-    } else {
-      if (onSession) onSession(result.data.session)
+    } else if (onSession) {
+      onSession(result.data.session)
     }
   }
 
@@ -89,7 +57,7 @@ export default function Auth({ onSession }) {
     if (!email.trim() || !password) return
     setLoading(true)
     setError(null)
-    var result = await supabase.auth.signUp({ email: email.trim(), password })
+    const result = await supabase.auth.signUp({ email: email.trim(), password })
     setLoading(false)
     if (result.error) {
       setError(result.error.message)
@@ -102,78 +70,75 @@ export default function Auth({ onSession }) {
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 100,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 20,
-    }}>
-      {/* Frosted glass backdrop */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'rgba(20, 30, 40, 0.55)',
-        backdropFilter: 'blur(4px)',
-      }} />
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+        overflowY: 'auto',
+      }}
+    >
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(20, 30, 40, 0.55)',
+          backdropFilter: 'blur(4px)',
+        }}
+      />
 
       <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.45, ease: 'easeOut' }}
         style={{
-          position: 'relative', zIndex: 1,
-          width: '100%', maxWidth: 520,
-          display: 'flex', flexDirection: 'column', gap: 0,
+          position: 'relative',
+          zIndex: 1,
+          width: '100%',
+          maxWidth: 520,
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        {/* ── Dialogue box ── */}
-        <div style={{
-          background: '#F8F8ED',
-          border: '4px solid #68A0B0',
-          borderRadius: 6,
-          boxShadow: '0 0 0 2px #F8F8ED, 0 0 0 4px #68A0B0, 0 8px 40px rgba(0,0,0,0.5)',
-          overflow: 'hidden',
-        }}>
-          {/* Header */}
-          <div style={{
-            background: '#68B0B0',
-            padding: '6px 14px',
-            display: 'flex', alignItems: 'center', gap: 8,
-          }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
-            <span className="pk-label pk-white" style={{ fontSize: '0.5rem', marginLeft: 4 }}>
-              PALLET TOWN TRAINER HUB
-            </span>
-          </div>
+        <div
+          className="bg-[#F8F8ED] border-4 border-[#68A0B0]"
+          style={{
+            borderRadius: 6,
+            boxShadow: '0 0 0 2px #F8F8ED, 0 0 0 4px #68A0B0, 0 8px 40px rgba(0,0,0,0.5)',
+            overflow: 'hidden',
+          }}
+        >
+          <G3Header pillCount={3} style={{ padding: '6px 14px' }}>
+            PALLET TOWN TRAINER HUB
+          </G3Header>
 
-          {/* Oak intro panel */}
-          <div style={{ display: 'flex', gap: 0, minHeight: 160 }}>
-            {/* Sprite pane */}
-            <div style={{
-              width: 130, flexShrink: 0,
-              background: 'linear-gradient(180deg, #A8E8D8 0%, #78C8B8 100%)',
-              borderRight: '3px solid #68A0B0',
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'flex-end',
-              padding: '10px 0 0',
-            }}>
-              {/* Shining stars behind sprite */}
+          <div className="flex flex-col sm:flex-row" style={{ minHeight: 160 }}>
+            <div
+              className="w-full sm:w-[130px] border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-[#68A0B0]"
+              style={{
+                flexShrink: 0,
+                background: 'linear-gradient(180deg, #A8E8D8 0%, #78C8B8 100%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                padding: '10px 0 0',
+              }}
+            >
               <div style={{ position: 'relative', width: 96, height: 96 }}>
                 <motion.div
-                  style={{
-                    position: 'absolute', top: 4, right: 4,
-                    fontSize: '0.7rem', lineHeight: 1,
-                  }}
+                  style={{ position: 'absolute', top: 4, right: 4, fontSize: '0.7rem', lineHeight: 1 }}
                   animate={{ rotate: [0, 360] }}
                   transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
                 >
                   ✦
                 </motion.div>
                 <motion.div
-                  style={{
-                    position: 'absolute', top: 14, left: 2,
-                    fontSize: '0.5rem', lineHeight: 1, opacity: 0.7,
-                  }}
+                  style={{ position: 'absolute', top: 14, left: 2, fontSize: '0.5rem', lineHeight: 1, opacity: 0.7 }}
                   animate={{ scale: [1, 1.4, 1] }}
                   transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
                 >
@@ -187,28 +152,22 @@ export default function Auth({ onSession }) {
                   transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                 />
               </div>
-              <div style={{
-                width: '100%',
-                background: 'rgba(0,0,0,0.12)',
-                padding: '4px 0', textAlign: 'center',
-                marginTop: 4,
-              }}>
+              <div style={{ width: '100%', background: 'rgba(0,0,0,0.12)', padding: '4px 0', textAlign: 'center', marginTop: 4 }}>
                 <span className="pk-label pk-white" style={{ fontSize: '0.38rem' }}>PROF. EEVEE</span>
               </div>
             </div>
 
-            {/* Dialogue text */}
             <div style={{ flex: 1, padding: '16px 14px 12px' }}>
               <p className="pk-dialogue-text" style={{ fontSize: '1.1rem', lineHeight: 1.7, color: '#383028' }}>
-                {mode === 'choice'
-                  ? <Typewriter text={INTRO_TEXT} speed={22} />
-                  : mode === 'login'
-                  ? 'Welcome back, Trainer! Enter your credentials to resume your journey.'
-                  : 'So you are a new Trainer! Register your Pokedex account to begin!'
-                }
+                {mode === 'choice' ? (
+                  <DialogueBox text={INTRO_TEXT} speed={22} />
+                ) : mode === 'login' ? (
+                  'Welcome back, Trainer! Enter your credentials to resume your journey.'
+                ) : (
+                  'So you are a new Trainer! Register your Pokedex account to begin!'
+                )}
               </p>
 
-              {/* Choice buttons — only shown in 'choice' mode */}
               {mode === 'choice' && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -219,7 +178,7 @@ export default function Auth({ onSession }) {
                   <button
                     id="auth-login-btn"
                     className="g3-btn g3-btn-sm"
-                    onClick={function() { clearForm(); setMode('login') }}
+                    onClick={() => { clearForm(); setMode('login') }}
                     style={{ flex: 1, fontSize: '0.45rem' }}
                   >
                     RETURNING TRAINER
@@ -227,7 +186,7 @@ export default function Auth({ onSession }) {
                   <button
                     id="auth-register-btn"
                     className="g3-btn g3-btn-sm g3-btn-orange"
-                    onClick={function() { clearForm(); setMode('register') }}
+                    onClick={() => { clearForm(); setMode('register') }}
                     style={{ flex: 1, fontSize: '0.45rem' }}
                   >
                     NEW TRAINER
@@ -237,7 +196,6 @@ export default function Auth({ onSession }) {
             </div>
           </div>
 
-          {/* ── Auth forms ── */}
           <AnimatePresence mode="wait">
             {(mode === 'login' || mode === 'register') && (
               <motion.div
@@ -253,29 +211,33 @@ export default function Auth({ onSession }) {
                   style={{
                     borderTop: '3px solid #68A0B0',
                     padding: '14px 16px 16px',
-                    display: 'flex', flexDirection: 'column', gap: 10,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
                   }}
                 >
-                  {/* Form header */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span className="pk-label" style={{ fontSize: '0.45rem', color: '#68B0B0' }}>
                       {mode === 'login' ? 'TRAINER LOGIN' : 'NEW TRAINER REGISTRATION'}
                     </span>
                     <button
                       type="button"
-                      onClick={function() { clearForm(); setMode('choice') }}
+                      onClick={() => { clearForm(); setMode('choice') }}
                       className="pk-label"
                       style={{
-                        fontSize: '0.38rem', color: 'var(--g3-text-muted)',
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        textDecoration: 'underline', fontFamily: 'var(--font-pixel)',
+                        fontSize: '0.38rem',
+                        color: 'var(--g3-text-muted)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                        fontFamily: 'var(--font-pixel)',
                       }}
                     >
                       BACK
                     </button>
                   </div>
 
-                  {/* Email */}
                   <div>
                     <label className="pk-label" style={{ fontSize: '0.38rem', color: 'var(--g3-text-muted)', display: 'block', marginBottom: 4 }}>
                       TRAINER EMAIL:
@@ -284,7 +246,7 @@ export default function Auth({ onSession }) {
                       id="auth-email"
                       type="email"
                       value={email}
-                      onChange={function(e) { setEmail(e.target.value) }}
+                      onChange={(e) => setEmail(e.target.value)}
                       placeholder="trainer@pallettown.com"
                       className="g3-input"
                       style={{ fontSize: '1.05rem', padding: '5px 10px' }}
@@ -293,7 +255,6 @@ export default function Auth({ onSession }) {
                     />
                   </div>
 
-                  {/* Password */}
                   <div>
                     <label className="pk-label" style={{ fontSize: '0.38rem', color: 'var(--g3-text-muted)', display: 'block', marginBottom: 4 }}>
                       SECRET PASSWORD:
@@ -302,7 +263,7 @@ export default function Auth({ onSession }) {
                       id="auth-password"
                       type="password"
                       value={password}
-                      onChange={function(e) { setPassword(e.target.value) }}
+                      onChange={(e) => setPassword(e.target.value)}
                       placeholder="Min. 6 characters"
                       className="g3-input"
                       style={{ fontSize: '1.05rem', padding: '5px 10px' }}
@@ -311,7 +272,6 @@ export default function Auth({ onSession }) {
                     />
                   </div>
 
-                  {/* Error message */}
                   <AnimatePresence>
                     {error && (
                       <motion.div
@@ -332,7 +292,6 @@ export default function Auth({ onSession }) {
                     )}
                   </AnimatePresence>
 
-                  {/* Success message */}
                   <AnimatePresence>
                     {success && (
                       <motion.div
@@ -353,7 +312,6 @@ export default function Auth({ onSession }) {
                     )}
                   </AnimatePresence>
 
-                  {/* Submit buttons */}
                   <div style={{ display: 'flex', gap: 8 }}>
                     {loading ? (
                       <div style={{ flex: 1 }}>
@@ -375,7 +333,7 @@ export default function Auth({ onSession }) {
                           type="button"
                           className="g3-btn g3-btn-orange"
                           style={{ flex: 1, fontSize: '0.42rem' }}
-                          onClick={function() { clearForm(); setMode('register') }}
+                          onClick={() => { clearForm(); setMode('register') }}
                         >
                           REGISTER
                         </button>
@@ -396,7 +354,7 @@ export default function Auth({ onSession }) {
                           type="button"
                           className="g3-btn"
                           style={{ flex: 1, fontSize: '0.42rem' }}
-                          onClick={function() { clearForm(); setMode('login') }}
+                          onClick={() => { clearForm(); setMode('login') }}
                         >
                           LOGIN
                         </button>
@@ -409,17 +367,12 @@ export default function Auth({ onSession }) {
           </AnimatePresence>
         </div>
 
-        {/* Bottom label */}
         <div style={{ textAlign: 'center', marginTop: 10 }}>
           <span className="pk-label" style={{ fontSize: '0.38rem', color: 'rgba(255,255,255,0.5)' }}>
-            POKEDEX PRODUCTIVITY SYSTEM v1.0
+            POKEDEX PRODUCTIVITY SYSTEM v2.0
           </span>
         </div>
       </motion.div>
-
-      <style>{`
-        @keyframes blink { 0%,100% { opacity: 0.4 } 50% { opacity: 1 } }
-      `}</style>
     </div>
   )
 }
