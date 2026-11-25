@@ -1,3 +1,10 @@
+<picture>
+  <source media="(prefers-reduced-motion: no-preference)" srcset="./project-scan.gif">
+  <img src="./project-static.png" width="1056" alt="PokeProd ASCII project diagram">
+</picture>
+
+Complete tasks and build streaks. Supabase provides authentication and live updates for shared raid interactions.
+
 # PokéProd (Lofi HeartGold)
 
 PokéProd is a gamified productivity RPG built with **React**, **Tailwind CSS**, **Zustand**, **Recharts**, **Framer Motion**, and **Supabase**. Inspired by Pokémon HeartGold/SoulSilver and styled with a classic Gen 3 GBA palette (`#F8F8ED` cream panels, `#68A0B0` teal / `#E09078` orange borders, and `VT323` / `Press Start 2P` typography), it turns daily tasks, deep-work focus sessions, habits, and multi-step projects into a cohesive Pokémon adventure.
