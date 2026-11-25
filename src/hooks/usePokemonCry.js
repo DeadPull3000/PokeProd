@@ -1,44 +1,44 @@
 import { useCallback } from 'react'
 import { useStore } from '../store'
+import { CRY_BASE } from '../constants/gameData'
 
-const CRY_BASE = 'https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/'
-
-/* Cache Audio objects to avoid re-creating on every hover */
 const cryCache = {}
 
 /**
+ * Play a cached Pokemon cry directly from an event handler.
+ */
+export function playPokemonCry(pokemonId) {
+  if (!pokemonId) return
+  if (!useStore.getState().soundEffects) return
+
+  try {
+    if (!cryCache[pokemonId]) {
+      const audio = new Audio(`${CRY_BASE}${pokemonId}.ogg`)
+      audio.volume = 0.3
+      audio.preload = 'none'
+      cryCache[pokemonId] = audio
+    }
+
+    const cry = cryCache[pokemonId]
+    cry.pause()
+    cry.currentTime = 0
+    cry.play().catch(() => {
+      /* Autoplay policy or network error — silently ignore */
+    })
+  } catch {
+    /* Silently ignore Audio constructor errors */
+  }
+}
+
+/**
  * usePokemonCry(pokemonId)
- * Returns a stable `playCry` function.
- * Call it in an onMouseEnter handler.
- * Respects the `soundEffects` setting from the global store.
+ * Returns a stable `playCry` handler respecting `soundEffects`.
  */
 export function usePokemonCry(pokemonId) {
-  const soundEffects = useStore(function(s) { return s.soundEffects })
+  const soundEffects = useStore((s) => s.soundEffects)
 
-  const playCry = useCallback(function() {
-    if (!soundEffects) return
-    if (!pokemonId)    return
-
-    try {
-      /* Reuse a cached Audio node when possible to skip network re-fetch */
-      if (!cryCache[pokemonId]) {
-        var audio = new Audio(CRY_BASE + pokemonId + '.ogg')
-        audio.volume = 0.3
-        audio.preload = 'none'
-        cryCache[pokemonId] = audio
-      }
-
-      var cry = cryCache[pokemonId]
-      /* If already playing, restart from the beginning */
-      cry.pause()
-      cry.currentTime = 0
-      cry.play().catch(function() {
-        /* Autoplay policy or network error — silently ignore */
-      })
-    } catch (err) {
-      /* Silently ignore any Audio constructor errors (e.g. unsupported format) */
-    }
+  return useCallback(() => {
+    if (!soundEffects || !pokemonId) return
+    playPokemonCry(pokemonId)
   }, [soundEffects, pokemonId])
-
-  return playCry
 }
