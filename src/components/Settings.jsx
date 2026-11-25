@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion'
 import { useSettings, useStore } from '../store'
-import { STARTERS, BG_CYCLES, BG_META } from '../constants/gameData'
+import { STARTERS, BG_CYCLES, BG_META, THEMES } from '../constants/gameData'
 import { G3, G3Header, G3Panel, SpriteImage } from './ui'
 import { downloadSaveJson } from '../utils/exportSave'
+import { requestNotificationPermission, sendPokeNotification } from '../utils/notifications'
 
 function SettingRow({ label, emoji, children, hint }) {
   return (
@@ -149,8 +150,27 @@ export default function SettingsTab() {
     soundEffects,
     music,
     backgroundCycle,
+    theme,
+    notificationsEnabled,
     updateSettings,
   } = useSettings()
+
+  async function handleToggleNotifications(enable) {
+    const pushToast = useStore.getState().pushToast
+    if (!enable) {
+      updateSettings({ notificationsEnabled: false })
+      return
+    }
+    const perm = await requestNotificationPermission()
+    if (perm === 'granted') {
+      updateSettings({ notificationsEnabled: true })
+      pushToast?.('Browser reminders enabled!', 'success', 2500)
+    } else if (perm === 'unsupported') {
+      pushToast?.('Notifications not supported in this browser.', 'warning')
+    } else {
+      pushToast?.('Notification permission denied in browser settings.', 'warning')
+    }
+  }
 
   function handleStarterChange(starter) {
     updateSettings({ starterPokemon: { id: starter.id, name: starter.name } })
@@ -212,6 +232,51 @@ export default function SettingsTab() {
         <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <SettingRow label="TIME OF DAY" emoji="🕐" hint={BG_META[backgroundCycle] ? BG_META[backgroundCycle].hint : ''}>
             <BgCyclePicker value={backgroundCycle} onChange={(v) => updateSettings({ backgroundCycle: v })} />
+          </SettingRow>
+        </div>
+      </G3Panel>
+
+      <G3Panel variant="teal" style={{ flexShrink: 0 }}>
+        <G3Header icon="🎨">COLOR THEME (GEN 1–5)</G3Header>
+        <div style={{ padding: '10px 12px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {THEMES.map((t) => {
+            const active = (theme || 'gen3') === t.id
+            return (
+              <button
+                key={t.id}
+                onClick={() => updateSettings({ theme: t.id })}
+                className={`g3-btn g3-btn-sm ${active ? '' : 'g3-btn-cream'}`}
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                title={t.subtitle}
+              >
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: t.swatch, border: '1px solid rgba(0,0,0,0.3)' }} />
+                <span>{t.name.toUpperCase()}</span>
+              </button>
+            )
+          })}
+        </div>
+      </G3Panel>
+
+      <G3Panel variant="orange" style={{ flexShrink: 0 }}>
+        <G3Header icon="🔔">NOTIFICATIONS & REMINDERS</G3Header>
+        <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <SettingRow
+            label="DEADLINE & HABIT ALERTS"
+            emoji="⏰"
+            hint={notificationsEnabled ? 'Alerts active for <4h Nuzlocke deadlines & evening habits' : 'Enable browser alerts so your Pokémon never faint'}
+          >
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <ToggleButton value={notificationsEnabled} onChange={handleToggleNotifications} />
+              {notificationsEnabled && (
+                <button
+                  type="button"
+                  onClick={() => sendPokeNotification('PokéProd Alert Test', 'Professor Oak says your reminders are working!')}
+                  className="g3-btn g3-btn-sm g3-btn-cream"
+                >
+                  TEST ALERT
+                </button>
+              )}
+            </div>
           </SettingRow>
         </div>
       </G3Panel>

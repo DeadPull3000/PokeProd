@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ELEMENTS, EVOLUTION_LINES } from '../constants/gameData'
-import { useTasks, useProjects, useXp } from '../store'
+import { useTasks, useProjects, useXp, useNuzlocke, useBattle, useCards, useUI } from '../store'
 import RouteMap from './RouteMap'
 import { ROUTE_PATH } from '../routeData'
 import ProjectCard from './ProjectCard'
 import { G3Header, SpriteImage } from './ui'
+import { getOakAdvice } from '../utils/oakAdvisor'
 
 /* ── XP Orb ── */
 function XPOrb({ element, onComplete }) {
@@ -419,8 +420,13 @@ function RouteMapPanel({ completedToday }) {
 export default function JourneyTab() {
   const { tasks, tasksLoading, tasksError, fetchTasks } = useTasks()
   const { projects, projectsLoading, projectsCloudSynced, fetchProjects, completeSubTask, deleteProject } = useProjects()
-  const { completedToday } = useXp()
+  const { xp, completedToday } = useXp()
+  const { party } = useNuzlocke()
+  const { dailyBoss } = useBattle()
+  const { cardPacks } = useCards()
+  const { setActiveTab } = useUI()
 
+  const oakTip = getOakAdvice({ tasks, xp, party, cardPacks, dailyBoss })
   const [showCreateForm, setShowCreateForm] = useState(false)
   const activeTasks = tasks.filter((t) => !(t.is_completed || t.completed))
 
@@ -586,6 +592,25 @@ export default function JourneyTab() {
 
       <div className="journey-route-col">
         <RouteMapPanel completedToday={completedToday} />
+
+        {/* Professor Oak's Smart Advisor Tip (Phase 5.5) */}
+        <div className="g3-panel overflow-hidden" style={{ flexShrink: 0 }}>
+          <G3Header icon="👨‍🔬" pillCount={2}>{oakTip.badge}</G3Header>
+          <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <p className="pk-dialogue-text" style={{ fontSize: '0.96rem', color: 'var(--g3-text)', lineHeight: 1.35 }}>
+              {oakTip.message}
+            </p>
+            {oakTip.actionTab && (
+              <button
+                onClick={() => setActiveTab(oakTip.actionTab)}
+                className="g3-btn g3-btn-sm self-end"
+                style={{ fontSize: '0.32rem' }}
+              >
+                {oakTip.actionLabel}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

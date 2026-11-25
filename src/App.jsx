@@ -7,9 +7,10 @@ import Sidebar, { MobileBottomNav, MobileTrainerHeader } from './components/Side
 import JourneyTab from './components/JourneyTab'
 import Auth from './components/Auth'
 import { ErrorBoundary, ToastContainer } from './components/ui'
-import { useAuth, useSettings, useUI, useXp, ELEMENTS } from './store'
+import { useAuth, useSettings, useUI, useXp, useStore, ELEMENTS } from './store'
 import { supabase } from './lib/supabase'
 import { animSprite } from './constants/gameData'
+import { checkAndDispatchReminders } from './utils/notifications'
 
 /* Code-split heavy tabs so initial bundle stays compact (Phase 4.4) */
 const SafariZone = lazy(() => import('./components/SafariZone'))
@@ -20,6 +21,7 @@ const RaidHub = lazy(() => import('./components/RaidHub'))
 const SettingsTab = lazy(() => import('./components/Settings'))
 const BattleTab = lazy(() => import('./components/BattleTab'))
 const PokedexTab = lazy(() => import('./components/PokedexTab'))
+const LeagueTab = lazy(() => import('./components/LeagueTab'))
 const StatsTab = lazy(() => import('./components/StatsTab'))
 
 function TabFallback() {
@@ -43,6 +45,7 @@ function MainContent({ activeTab }) {
     raidhub: <RaidHub />,
     battle: <BattleTab />,
     pokedex: <PokedexTab />,
+    league: <LeagueTab />,
     stats: <StatsTab />,
     settings: <SettingsTab />,
   }
@@ -99,11 +102,26 @@ function LoadingSplash() {
 export default function App() {
   const { activeTab, setOffline, pushToast } = useUI()
   const { xp } = useXp()
-  const { backgroundCycle } = useSettings()
+  const { backgroundCycle, notificationsEnabled } = useSettings()
   const { authLoading, user, checkSession, setSession, signOut } = useAuth()
 
   const isSafari = activeTab === 'safari'
   const forcedScene = backgroundCycle !== 'Auto' ? backgroundCycle : null
+
+  useEffect(() => {
+    if (!user || !notificationsEnabled) return
+    const runCheck = () => {
+      const s = useStore.getState()
+      checkAndDispatchReminders({
+        party: s.party,
+        habits: s.habits,
+        notificationsEnabled: s.notificationsEnabled,
+      })
+    }
+    runCheck()
+    const id = setInterval(runCheck, 60_000)
+    return () => clearInterval(id)
+  }, [user, notificationsEnabled])
 
   useEffect(() => {
     checkSession()

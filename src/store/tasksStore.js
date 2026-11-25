@@ -70,6 +70,7 @@ export const createTasksSlice = (set, get) => ({
     state.gainXP(element, xpGain)
     state.recordDailyActivity?.({ tasksDelta: 1 })
     state.strikeDailyBoss?.(element)
+    state.advanceActiveDuels?.(1)
 
     if (state.session) {
       const { error } = await supabase

@@ -147,8 +147,17 @@ export const NAV_ITEMS = [
   { id: 'raidhub',     emoji: '🗡️', label: 'RAID HUB',    shortLabel: 'RAID' },
   { id: 'battle',      emoji: '⚔️', label: 'BATTLE',      shortLabel: 'BATTLE' },
   { id: 'pokedex',     emoji: '📖', label: 'POKéDEX',     shortLabel: 'DEX' },
+  { id: 'league',      emoji: '🏆', label: 'LEAGUE',      shortLabel: 'LEAGUE' },
   { id: 'stats',       emoji: '📊', label: 'STATS',       shortLabel: 'STATS' },
   { id: 'settings',    emoji: '⚙️', label: 'SETTINGS',    shortLabel: 'OPTS' },
+]
+
+export const THEMES = [
+  { id: 'gen3', name: 'Gen 3 GBA',     subtitle: 'Classic Cream (Default)', swatch: '#68B0B0' },
+  { id: 'gen1', name: 'Gen 1 DMG',     subtitle: 'Game Boy Monochrome',     swatch: '#306230' },
+  { id: 'gen2', name: 'Gen 2 Johto',   subtitle: 'Gold & Silver GBC',       swatch: '#3838B8' },
+  { id: 'gen4', name: 'Gen 4 Sinnoh',  subtitle: 'Diamond & Pearl DS',      swatch: '#4A6CF7' },
+  { id: 'gen5', name: 'Gen 5 Unova',   subtitle: 'Black & White DS',        swatch: '#2D6DB5' },
 ]
 
 export function mapWeatherCode(code) {

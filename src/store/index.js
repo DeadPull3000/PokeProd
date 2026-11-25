@@ -15,8 +15,10 @@ import { createRaidSlice } from './raidStore'
 import { createPokedexSlice } from './pokedexStore'
 import { createBattleSlice } from './battleStore'
 import { createStatsSlice } from './statsStore'
+import { createSocialSlice } from './socialStore'
+import { createCardsSlice } from './cardsStore'
 
-export { ELEMENTS, EVOLUTION_LINES, STARTERS, BG_CYCLES, BG_META } from '../constants/gameData'
+export { ELEMENTS, EVOLUTION_LINES, STARTERS, BG_CYCLES, BG_META, THEMES } from '../constants/gameData'
 
 export const useStore = create((set, get) => ({
   ...createUiSlice(set, get),
@@ -32,6 +34,8 @@ export const useStore = create((set, get) => ({
   ...createPokedexSlice(set, get),
   ...createBattleSlice(set, get),
   ...createStatsSlice(set, get),
+  ...createSocialSlice(set, get),
+  ...createCardsSlice(set, get),
 }))
 
 /* Shallow domain hooks — prevent unrelated re-renders across tabs */
@@ -82,6 +86,8 @@ export const useSettings = () =>
       soundEffects: s.soundEffects,
       music: s.music,
       backgroundCycle: s.backgroundCycle,
+      theme: s.theme,
+      notificationsEnabled: s.notificationsEnabled,
       setTrainerName: s.setTrainerName,
       persistTrainerProfile: s.persistTrainerProfile,
       updateSettings: s.updateSettings,
@@ -197,5 +203,37 @@ export const useStats = () =>
       statsCloudSynced: s.statsCloudSynced,
       fetchSnapshots: s.fetchSnapshots,
       recordDailyActivity: s.recordDailyActivity,
+    }))
+  )
+
+export const useSocial = () =>
+  useStore(
+    useShallow((s) => ({
+      friendCode: s.friendCode,
+      isPublicProfile: s.isPublicProfile,
+      friends: s.friends,
+      leaderboard: s.leaderboard,
+      duels: s.duels,
+      socialLoading: s.socialLoading,
+      socialCloudSynced: s.socialCloudSynced,
+      fetchSocialData: s.fetchSocialData,
+      togglePublicProfile: s.togglePublicProfile,
+      sendFriendRequest: s.sendFriendRequest,
+      acceptFriendRequest: s.acceptFriendRequest,
+      startDuel: s.startDuel,
+      advanceActiveDuels: s.advanceActiveDuels,
+    }))
+  )
+
+export const useCards = () =>
+  useStore(
+    useShallow((s) => ({
+      collectedCards: s.collectedCards,
+      cardPacks: s.cardPacks,
+      cardsLoading: s.cardsLoading,
+      cardsCloudSynced: s.cardsCloudSynced,
+      fetchCards: s.fetchCards,
+      grantCardPack: s.grantCardPack,
+      openCardPack: s.openCardPack,
     }))
   )

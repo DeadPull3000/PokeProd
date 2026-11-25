@@ -174,8 +174,9 @@ export const createBattleSlice = (set, get) => ({
     saveLocalBadges(userId, nextBadges)
 
     if (defeatedNow) {
-      state.pushToast?.(`🏅 GYM CLEARED! Earned the ${leader.badgeName}! (+100 XP)`, 'success', 4500)
+      state.pushToast?.(`🏅 GYM CLEARED! Earned the ${leader.badgeName}! (+100 XP & Pack)`, 'success', 4500)
       state.addXp(100)
+      state.grantCardPack?.(1)
       state.registerPokemon?.(leader.aceId, false, 'battle')
     } else if (isSuperEffective) {
       state.pushToast?.(`⚡ Super effective! Dealt ${dmg} DMG to ${leader.leaderName}!`, 'info', 2500)

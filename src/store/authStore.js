@@ -18,6 +18,8 @@ export const createAuthSlice = (set, get) => ({
     state.fetchPokedex?.()
     state.fetchBattleState?.()
     state.fetchSnapshots?.()
+    state.fetchSocialData?.()
+    state.fetchCards?.()
   },
 
   checkSession: async () => {
@@ -68,6 +70,9 @@ export const createAuthSlice = (set, get) => ({
       pokedexEntries: [],
       gymBadges: [],
       dailySnapshots: [],
+      friends: [],
+      duels: [],
+      collectedCards: [],
       nuzlockeLoading: false,
       secretBaseLoading: false,
       habitsLoading: false,

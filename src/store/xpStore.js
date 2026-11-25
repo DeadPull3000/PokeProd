@@ -101,7 +101,8 @@ export const createXpSlice = (set, get) => ({
     set({ totalXP: newXp, trainerLevel: newLevel })
 
     if (newLevel > prevLevel) {
-      state.pushToast?.(`LEVEL UP! You reached Lv.${newLevel}!`, 'success', 4500)
+      state.pushToast?.(`LEVEL UP! You reached Lv.${newLevel}! (+1 Card Pack)`, 'success', 4500)
+      state.grantCardPack?.(1)
     }
     state.recordDailyActivity?.({ tasksDelta: 0, habitsDelta: 0 })
 
